@@ -13,7 +13,8 @@ EPS = 0.003
 def fanin_init(size, fanin=None):
 	fanin = fanin or size[0]
 	v = 1. / np.sqrt(fanin)
-	return torch.Tensor(size).uniform_(-v, v)
+	device = 'cuda' if torch.cuda.is_available() else 'cpu'
+	return torch.Tensor(size).uniform_(-v, v).to(device)
     
 class ActorCritic(nn.Module):
     def __init__(self, num_inputs, state_dim, action_dim, lr = 0.001, 
