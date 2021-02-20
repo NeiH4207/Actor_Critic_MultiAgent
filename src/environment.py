@@ -16,7 +16,7 @@ class Environment(object):
         self.score_opponent = 0
         self.old_score = 0
         self.punish = 0
-        self.n_inputs = 7
+        self.n_inputs = 8
         self.data = dcopy(input_data)
         self.show_screen = show_screen
         self.screen = Screen(show_screen)
@@ -27,6 +27,7 @@ class Environment(object):
     
     def reset(self):
         self.score_matrix = []
+        self.normalized_score_matrix = []
         self.agents_matrix = [[], []]
         self.treasures_matrix = []
         self.walls_matrix = []
@@ -87,6 +88,9 @@ class Environment(object):
         self.remaining_turns = n_turns
         self.n_agents = n_agents
         self.n_turns = n_turns
+        maximum = np.max(score_matrix)
+        minimum = np.min(score_matrix)
+        self.normalized_score_matrix = (score_matrix - minimum) / (maximum - minimum)
     
         for i in range(self.MAX_SIZE):
             self.score_matrix.append([0] * self.MAX_SIZE)
@@ -127,21 +131,30 @@ class Environment(object):
         self.observation_dim = len(self.get_state(0, 0))
         self.action_dim = 9
     
-    def get_state(self, player, agent):
-        state = dcopy([self.get_observation(player), self.get_agent_state(agent, self.agent_pos[player])])
-        return np.array(flatten(state), dtype = np.float32)
+    def get_state(self, player, agent_id):
+        state = dcopy(self.get_observation(player))
+        state.append(self.get_agent_state(agent_id, self.agent_pos[player]))
+        return state
     
     def get_observation(self, player):
         state = dcopy([self.score_matrix, self.agents_matrix, self.conquer_matrix, 
                        self.treasures_matrix, self.walls_matrix])
         if player == 1:
             temp = dcopy(state[1][0])
-            state[1][0] = state[1][1]
+            state[1][0] = dcopy(state[1][1])
             state[1][1] = temp
             temp = dcopy(state[2][0])
-            state[2][0] = state[2][1]
+            state[2][0] = dcopy(state[2][1])
             state[2][1] = temp
         return state
+    
+    def get_obs_for_states(self, states):
+        states = np.array(flatten(states), dtype = np.float32)\
+            .reshape(-1, self.n_inputs, self.MAX_SIZE, self.MAX_SIZE)
+        for state in states:
+            state[0] = self.normalized_score_matrix
+        return states
+    
     
     def get_agent_pos(self, player):
         return dcopy(self.agent_pos[player])
@@ -244,7 +257,13 @@ class Environment(object):
         score_B = score_title[1] + score_area_B
         return [score_A, score_B], treasure_score, area_matrix_1
     
-    
+    def get_score(self, state, player_ID):
+        state = dcopy(state)
+        state.pop()
+        scores, treasure_scores, _ = self.compute_score(state)
+        result = scores[0] + treasure_scores[0] - scores[1] - treasure_scores[1]
+        return 1 if result > 0 else -1
+            
     def check_next_action(self, _act, id_agent, agent_pos):
         x, y = agent_pos[id_agent][0], agent_pos[id_agent][1]
         x, y = self.next_action(x, y, _act)
@@ -281,8 +300,6 @@ class Environment(object):
         if abs(self.angle(a1, b1, a2, b2)) - 0.0001 <= pi / 3:
             return True
         return False
-        
-        
     
     def predict_spread_scores(self, x, y, state, predict, act, area_matrix):
         score_matrix, agents_matrix, conquer_matrix, treasures_matrix, walls_matrix = state
@@ -407,6 +424,35 @@ class Environment(object):
         reward = scores[0] + treasures_scores[0] - scores[1] - treasures_scores[1] + aux_score
         
         return valid, state, reward
+    
+    def soft_step_(self, state, action):
+        score_matrix, agents_matrix, conquer_matrix, treasures_matrix, walls_matrix,\
+            agent = dcopy(state)
+        x, y = -1, -1
+        for i in range(self.height):
+            for j in range(self.width):
+                if agent[i][j] == 1:
+                    x, y = i, j
+        new_pos = (self.next_action(x, y, action))
+        _x, _y = new_pos
+        valid = True
+        if _x >= 0 and _x < self.height and _y >= 0 and _y < self.width and walls_matrix[_x][_y] == 0:
+            if agents_matrix[0][_x][_y] == 0 and agents_matrix[1][_x][_y] == 0:
+                if conquer_matrix[1][_x][_y] == 0:
+                    agents_matrix[0][_x][_y] = 1
+                    agents_matrix[0][x][y] = 0
+                    conquer_matrix[0][_x][_y] = 1
+                    treasures_matrix[_x][_y] = 0
+                    agent[x][y] = 0
+                    agent[_x][_y] = 1
+                else:
+                    conquer_matrix[1][_x][_y] = 0
+        else:
+            valid = False
+        
+        
+        state = [score_matrix, agents_matrix, conquer_matrix, treasures_matrix, walls_matrix, agent]         
+        return state
     
     def get_next_action_pos(self, action_1, action_2):
         point_punish = 30
@@ -637,4 +683,29 @@ class Environment(object):
 
         return [np.array(flatten(state)), reward, terminal, self.remaining_turns]
 
-        
+    def next_state(self, state, action, player_ID, agent_ID):
+        state = dcopy(state)
+            
+        if agent_ID == self.n_agents - 1:
+            player_ID = 1 - player_ID
+            agent_ID = 0
+        else:
+            agent_ID += 1
+            
+        if player_ID == 1:
+            temp = dcopy(state[1][0])
+            state[1][0] = dcopy(state[1][1])
+            state[1][1] = temp
+            temp = dcopy(state[2][0])
+            state[2][0] = dcopy(state[2][1])
+            state[2][1] = temp
+            
+        state[-1] = self.get_agent_state(agent_ID, self.agent_pos[player_ID])
+        return self.soft_step_(state, action), player_ID, agent_ID
+            
+    def get_return(self, state, player_ID):
+        return self.get_score(state, player_ID)
+    
+    def is_done_state(self, state, depth):
+        return depth >= 2 * (1 + self.n_turns) * self.n_agents
+    

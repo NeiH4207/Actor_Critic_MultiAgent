@@ -150,7 +150,7 @@ class Agent():
         self.steps_done += 1
         
     def select_action(self, state):
-        state = torch.FloatTensor(state).to(self.device).view(1, self.n_inputs, self.args.max_size, -1)
+        state = torch.FloatTensor(state).to(self.device)
         prob, state_value = self.model(state)
         act = prob.sample()
         if random() < self.random_rate:
@@ -162,7 +162,7 @@ class Agent():
     
     
     def select_action_exp(self, state, action):
-        state = torch.FloatTensor(state).to(self.device).view(1, self.n_inputs, self.args.max_size, -1)
+        state = torch.FloatTensor(state).to(self.device)
         prob, state_value = self.model(state)
         log_p = prob.log_prob(torch.tensor(action).to(self.device))
         self.model.entropies += prob.entropy().mean()

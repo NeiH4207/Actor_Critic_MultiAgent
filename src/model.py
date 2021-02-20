@@ -16,7 +16,8 @@ def fanin_init(size, fanin=None):
 	return torch.Tensor(size).uniform_(-v, v)
     
 class ActorCritic(nn.Module):
-    def __init__(self, num_inputs, state_dim, action_dim, lr = 0.001, checkpoint_file = 'Models/', is_recurrent=True):
+    def __init__(self, num_inputs, state_dim, action_dim, lr = 0.001, 
+                 checkpoint_file = 'Models/', is_recurrent=True):
         super(ActorCritic, self).__init__()
         self.action_dim = action_dim
 
@@ -27,12 +28,12 @@ class ActorCritic(nn.Module):
         self.conv2 = nn.Conv2d(32, 32, 3, stride=2, padding=1)
         self.conv3 = nn.Conv2d(32, 32, 3, stride=2, padding=1)
 
-        self.lstm = nn.LSTMCell(32 * 3 * 3, 256)
+        self.lstm = nn.LSTMCell(8, 32 * 3 * 3, 256)
         self.lstm.bias_ih.data.fill_(0)
         self.lstm.bias_hh.data.fill_(0)
         
-        self.actor_fc1 = nn.Linear(256, 128)
-        self.critic_fc1 = nn.Linear(256, 128)
+        self.actor_fc1 = nn.Linear(32 * 3 * 3, 128)
+        self.critic_fc1 = nn.Linear(32 * 3 * 3, 128)
         self.actor_fc1.weight.data = fanin_init(self.actor_fc1.weight.data.size())
         self.critic_fc1.weight.data = fanin_init(self.critic_fc1.weight.data.size())
         
@@ -57,13 +58,12 @@ class ActorCritic(nn.Module):
         self.checkpoint_file = checkpoint_file
     
     def forward(self, inputs):
-        cx = torch.zeros(1, 256).to(self.device)
-        hx = torch.zeros(1, 256).to(self.device)
+        # cx = torch.zeros(1, 256).to(self.device)
+        # hx = torch.zeros(1, 256).to(self.device)
         x = F.relu(self.conv1(inputs))
         x = F.relu(self.conv2(x))
         x = F.relu(self.conv3(x))
-        x = x.view(-1, 32 * 3 * 3)
-        output, hx = self.lstm(x, (cx, hx))
+        output = x.view(-1, 32 * 3 * 3)
         x = F.relu(self.actor_fc1(output))
         x = F.relu(self.actor_fc2(x))
         # x = F.relu(self.actor_fc3(x))
@@ -75,7 +75,19 @@ class ActorCritic(nn.Module):
         state_value = self.value_head(y)
         
         probs = F.softmax(action_score, dim = -1)
-        return Categorical(probs), state_value
+        return action_score, probs, state_value
+    
+    def step(self, obs):
+        """
+        Returns policy and value estimates for given observations.
+        :param obs: Array of shape [N] containing N observations.
+        :return: Policy estimate [N, n_actions] and value estimate [N] for
+        the given observations.
+        """
+        obs = torch.from_numpy(obs).to(self.device)
+        _, pi, v = self.forward(obs)
+
+        return pi.detach().numpy(), v.detach().numpy()
 
     def store(self, prob, state_value, reward, next_state):
         self.action_probs.append(prob)
@@ -110,11 +122,11 @@ class ActorCritic(nn.Module):
         
     
 class ActorCritic_2(nn.Module):
-    def __init__(self, state_dim, action_dim, lr = 0.001, checkpoint_file = 'Models/', is_recurrent=True):
-        super(ActorCritic, self).__init__()
+    def __init__(self, num_inputs, state_dim, action_dim, lr = 0.001, checkpoint_file = 'Models/', is_recurrent=True):
+        super(ActorCritic_2, self).__init__()
         self.recurrent = is_recurrent
         self.action_dim = action_dim
-
+        self.num_inputs = num_inputs
         self.state_dim = state_dim
         self.action_dim = action_dim
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -170,8 +182,19 @@ class ActorCritic_2(nn.Module):
         state_value = self.value_head(y)
         
         probs = F.softmax(action_score, dim = -1)
-        return Categorical(probs), state_value
+        return action_score, probs, state_value
 
+    def step(self, obs):
+        """
+        Returns policy and value estimates for given observations.
+        :param obs: Array of shape [N] containing N observations.
+        :return: Policy estimate [N, n_actions] and value estimate [N] for
+        the given observations.
+        """
+        obs = torch.from_numpy(obs).to(self.device).view(-1, 288)
+        _, pi, v = self.forward(obs)
+
+        return pi.detach().numpy(), v.detach().numpy()
     def optimize(self):
         self.optimizer.step()
         
@@ -184,6 +207,5 @@ class ActorCritic_2(nn.Module):
 
     def load_checkpoint(self, name):
         # print('... loading checkpoint ...')
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.load_state_dict(torch.load(self.checkpoint_file + name + '.pt', map_location = self.device))
         

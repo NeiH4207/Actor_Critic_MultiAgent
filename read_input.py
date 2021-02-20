@@ -1,6 +1,8 @@
 import random
+from copy import deepcopy as dcopy
+import numpy as np
 
-random.seed(1)
+random.seed(3)
             
 class Data():
     
@@ -125,10 +127,10 @@ class Data():
                 score_matrix[i][j] =  value
                 score_matrix[height- i - 1][width- j - 1] = value
         
-        turns = random.randint(15, 15)
+        turns = random.randint(5, 15)
         
-        n_agents = random.randint(2, 8)
-        # n_agents = 1
+        # n_agents = random.randint(2, 8)
+        n_agents = random.randint(2, self.MAX_SIZE / 2)
         agent_pos = [[], []]
         
         
@@ -143,7 +145,7 @@ class Data():
             agent_pos[1]. append( [height - _x - 1, width - _y - 1])
         
             
-        num_treasures = random.randint(5, 10)
+        num_treasures = random.randint(2, 4)
         treasures = []
         for j in range(num_treasures):
             _x, _y = random.randint(0, height- 1), random.randint(0, width- 1)
@@ -159,8 +161,8 @@ class Data():
             treasures.append([height- _x - 1, width- _y - 1, value])
         
                
-        num_walls = random.randint(int(height * width / 40), int(height * width / 30))
-        # num_walls = 1
+        # num_walls = random.randint(int(height * width / 40), int(height * width / 30))
+        num_walls = random.randint(2, 4)
         
         wall_coords = []
         for j in range(num_walls):
@@ -170,12 +172,21 @@ class Data():
                 _y = random.randint(0, width- 1)
             matrix[_x][_y] = 4
             matrix[height- _x - 1][width- _y - 1] = 4
+            score_matrix[_x][_y] = 0
+            score_matrix[height- _x - 1][width- _y - 1] = 0
             wall_coords.append([_x, _y])
             wall_coords.append([height - _x - 1, width- _y - 1])
         
         data = [height, width, score_matrix, agent_pos, treasures, wall_coords, 
                     conquer_matrix, turns, n_agents]
         return data
+    
+    def transposion(self, data):
+        height, width, score_matrix, agent_pos, treasures, wall_coords, \
+                    conquer_matrix, turns, n_agents = dcopy(data)
+        
+        return [height, width, score_matrix, [agent_pos[1], agent_pos[0]], treasures, wall_coords, 
+                    [conquer_matrix[1], conquer_matrix[0]], turns, n_agents]
     
     def read_map_from_file(self, file_name):
         
