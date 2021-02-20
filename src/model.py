@@ -67,7 +67,7 @@ class ActorCritic(nn.Module):
         x = F.relu(self.conv1(inputs))
         x = F.relu(self.conv2(x))
         x = F.relu(self.conv3(x))
-        output = x.view(-1, 32 * 3 * 3)
+        output = x.view(-1, 32 * 3 * 3).to(self.device)
         x = F.relu(self.actor_fc1(output))
         x = F.relu(self.actor_fc2(x))
         # x = F.relu(self.actor_fc3(x))
