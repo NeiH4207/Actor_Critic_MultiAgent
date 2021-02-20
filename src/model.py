@@ -91,7 +91,7 @@ class ActorCritic(nn.Module):
         obs = torch.from_numpy(obs).to(self.device)
         _, pi, v = self.forward(obs)
 
-        return pi.detach().numpy(), v.detach().numpy()
+        return pi.detach().to('cpu').numpy(), v.detach().to('cpu').numpy()
 
     def store(self, prob, state_value, reward, next_state):
         self.action_probs.append(prob)
