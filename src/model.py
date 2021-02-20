@@ -24,14 +24,18 @@ class ActorCritic(nn.Module):
 
         self.state_dim = state_dim
         self.action_dim = action_dim
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         
         self.conv1 = nn.Conv2d(num_inputs, 32, 3, stride=2, padding=1)
         self.conv2 = nn.Conv2d(32, 32, 3, stride=2, padding=1)
         self.conv3 = nn.Conv2d(32, 32, 3, stride=2, padding=1)
+        self.conv1.weight.data = fanin_init(self.conv1.weight.data.size())
+        self.conv2.weight.data = fanin_init(self.conv2.weight.data.size())
+        self.conv3.weight.data = fanin_init(self.conv3.weight.data.size())
 
-        self.lstm = nn.LSTMCell(8, 32 * 3 * 3, 256)
-        self.lstm.bias_ih.data.fill_(0)
-        self.lstm.bias_hh.data.fill_(0)
+        # self.lstm = nn.LSTMCell(8, 32 * 3 * 3, 256)
+        # self.lstm.bias_ih.data.fill_(0)
+        # self.lstm.bias_hh.data.fill_(0)
         
         self.actor_fc1 = nn.Linear(32 * 3 * 3, 128)
         self.critic_fc1 = nn.Linear(32 * 3 * 3, 128)
@@ -43,7 +47,6 @@ class ActorCritic(nn.Module):
         self.actor_fc2.weight.data = fanin_init(self.actor_fc2.weight.data.size())
         self.critic_fc2.weight.data = fanin_init(self.critic_fc2.weight.data.size())
         
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.lr = lr
         self.action_head = nn.Linear(128, action_dim)
         self.value_head = nn.Linear(128, 1) # Scalar Value
