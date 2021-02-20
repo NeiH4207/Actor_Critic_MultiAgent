@@ -19,7 +19,7 @@ class Trainer:
 
         def train(batch):
             obs, search_pis, returns = batch
-            obs = torch.from_numpy(obs).view(-1, 288).to(self.device)
+            obs = torch.from_numpy(obs).to(self.device)
             search_pis = torch.from_numpy(search_pis).to(self.device)
             returns = torch.from_numpy(returns).to(self.device)
             model.reset_grad()

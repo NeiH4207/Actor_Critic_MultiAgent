@@ -88,9 +88,6 @@ class Environment(object):
         self.remaining_turns = n_turns
         self.n_agents = n_agents
         self.n_turns = n_turns
-        maximum = np.max(score_matrix)
-        minimum = np.min(score_matrix)
-        self.normalized_score_matrix = (score_matrix - minimum) / (maximum - minimum)
     
         for i in range(self.MAX_SIZE):
             self.score_matrix.append([0] * self.MAX_SIZE)
@@ -104,6 +101,10 @@ class Environment(object):
         for i in range(self.height):
             for j in range(self.width):
                 self.score_matrix[i][j] = score_matrix[i][j]
+                
+        maximum = np.max(score_matrix)
+        minimum = np.min(score_matrix)
+        self.normalized_score_matrix = (self.score_matrix[i][j] - minimum) / (maximum - minimum)
             
         for i in range(self.n_agents):    
             for j in range(2):

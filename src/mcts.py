@@ -111,10 +111,7 @@ class MCTSNode:
 
     @property
     def child_U(self):
-        sign = 1
-        if self.player_ID == 1:
-            sign = -1
-        return sign * (c_PUCT * math.sqrt(1 + self.N) *
+        return (c_PUCT * math.sqrt(1 + self.N) *
                 self.child_prior / (1 + self.child_N))
 
     @property
@@ -143,10 +140,7 @@ class MCTSNode:
             if not current.is_expanded:
                 break
             # Choose action with highest score.
-            if current.player_ID == 0:
-                best_move = np.argmax(current.child_action_score)
-            else:
-                best_move = np.argmin(current.child_action_score)
+            best_move = np.argmax(current.child_action_score)
                 
             current = current.maybe_add_child(best_move)
         return current

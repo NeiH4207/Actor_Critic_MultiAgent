@@ -87,7 +87,8 @@ def train(args):
     data = Data(args.min_size, args.max_size)
     rand_map = data.get_random_map()
     env = Environment(rand_map, args.show_screen, args.max_size)
-    model = ActorCritic_2(8, 288, action_dim = env.action_dim, lr = args.lr)
+    # model = ActorCritic_2(8, 288, action_dim = env.action_dim, lr = args.lr)
+    model = ActorCritic(8, env.observation_dim, action_dim = env.action_dim, lr = args.lr)
     if args.load_checkpoint:
         model.load_checkpoint(name = args.model_name)
     mem = ReplayMemory(args.replay_memory_size, args.batch_size)
@@ -131,7 +132,8 @@ def test(args):
     data = Data(args.min_size, args.max_size)
     rand_map = data.get_random_map()
     env = Environment(rand_map, args.show_screen, args.max_size)
-    model = ActorCritic_2(8, 288, action_dim = env.action_dim, lr = args.lr)
+    # model = ActorCritic_2(8, 288, action_dim = env.action_dim, lr = args.lr)
+    model = ActorCritic(8, env.observation_dim, action_dim = env.action_dim, lr = args.lr)
     model.load_checkpoint(name = args.model_name)
     
     visual_mean_value_3 = deque(maxlen = 5000)
@@ -202,8 +204,8 @@ def get_args():
     parser.add_argument("--file_name", default = "input.txt")
     parser.add_argument("--type", default = "1")
     parser.add_argument("--run", type=str, default="train")   
-    parser.add_argument("--min_size", type=int, default= 6)   
-    parser.add_argument("--max_size", type=int, default= 6)   
+    parser.add_argument("--min_size", type=int, default= 10)   
+    parser.add_argument("--max_size", type=int, default= 20)   
     parser.add_argument("--image_size", type=int, default=84, help="The common width and height for all images")
     parser.add_argument("--batch_size", type=int, default=512, help="The number of state per batch")
     parser.add_argument("--optimizer", type=str, choices=["sgd", "adam"], default="adam")
@@ -229,7 +231,7 @@ def get_args():
     parser.add_argument("--model_name", type=str, default='model')
     parser.add_argument("--show_screen", type=str, default=True)
     parser.add_argument("--load_checkpoint", type=str, default=False)
-    parser.add_argument("--saved_checkpoint", type=str, default=True)   
+    parser.add_argument("--saved_checkpoint", type=str, default=False)   
     
     args, unknown = parser.parse_known_args()
     return args

@@ -127,10 +127,10 @@ class Data():
                 score_matrix[i][j] =  value
                 score_matrix[height- i - 1][width- j - 1] = value
         
-        turns = random.randint(5, 15)
+        turns = random.randint(25, 60)
         
-        # n_agents = random.randint(2, 8)
-        n_agents = random.randint(2, self.MAX_SIZE / 2)
+        n_agents = random.randint(2, 8)
+        # n_agents = random.randint(2, self.MAX_SIZE / 2)
         agent_pos = [[], []]
         
         
@@ -145,7 +145,8 @@ class Data():
             agent_pos[1]. append( [height - _x - 1, width - _y - 1])
         
             
-        num_treasures = random.randint(2, 4)
+        num_treasures = random.randint(n_agents, 2 * n_agents)
+        # num_treasures = random.randint(2, 4)
         treasures = []
         for j in range(num_treasures):
             _x, _y = random.randint(0, height- 1), random.randint(0, width- 1)
@@ -161,8 +162,8 @@ class Data():
             treasures.append([height- _x - 1, width- _y - 1, value])
         
                
-        # num_walls = random.randint(int(height * width / 40), int(height * width / 30))
-        num_walls = random.randint(2, 4)
+        num_walls = random.randint(int(height * width / 35), int(height * width / 20))
+        # num_walls = random.randint(2, 4)
         
         wall_coords = []
         for j in range(num_walls):
