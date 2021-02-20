@@ -26,9 +26,9 @@ class ActorCritic(nn.Module):
         self.action_dim = action_dim
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         
-        self.conv1 = nn.Conv2d(num_inputs, 32, 3, stride=2, padding=1)
-        self.conv2 = nn.Conv2d(32, 32, 3, stride=2, padding=1)
-        self.conv3 = nn.Conv2d(32, 32, 3, stride=2, padding=1)
+        self.conv1 = nn.Conv2d(num_inputs, 32, 3, stride=2, padding=1).to(self.device)
+        self.conv2 = nn.Conv2d(32, 32, 3, stride=2, padding=1).to(self.device)
+        self.conv3 = nn.Conv2d(32, 32, 3, stride=2, padding=1).to(self.device)
         self.conv1.weight.data = fanin_init(self.conv1.weight.data.size())
         self.conv2.weight.data = fanin_init(self.conv2.weight.data.size())
         self.conv3.weight.data = fanin_init(self.conv3.weight.data.size())
