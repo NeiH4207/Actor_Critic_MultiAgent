@@ -37,19 +37,19 @@ class ActorCritic(nn.Module):
         # self.lstm.bias_ih.data.fill_(0)
         # self.lstm.bias_hh.data.fill_(0)
         
-        self.actor_fc1 = nn.Linear(32 * 3 * 3, 128)
-        self.critic_fc1 = nn.Linear(32 * 3 * 3, 128)
+        self.actor_fc1 = nn.Linear(32 * 3 * 3, 128).to(self.device)
+        self.critic_fc1 = nn.Linear(32 * 3 * 3, 128).to(self.device)
         self.actor_fc1.weight.data = fanin_init(self.actor_fc1.weight.data.size())
         self.critic_fc1.weight.data = fanin_init(self.critic_fc1.weight.data.size())
         
-        self.actor_fc2 = nn.Linear(128, 128)
-        self.critic_fc2 = nn.Linear(128, 128)
+        self.actor_fc2 = nn.Linear(128, 128).to(self.device)
+        self.critic_fc2 = nn.Linear(128, 128).to(self.device)
         self.actor_fc2.weight.data = fanin_init(self.actor_fc2.weight.data.size())
         self.critic_fc2.weight.data = fanin_init(self.critic_fc2.weight.data.size())
         
         self.lr = lr
-        self.action_head = nn.Linear(128, action_dim)
-        self.value_head = nn.Linear(128, 1) # Scalar Value
+        self.action_head = nn.Linear(128, action_dim).to(self.device)
+        self.value_head = nn.Linear(128, 1).to(self.device) # Scalar Value
         self.action_head.weight.data.uniform_(-EPS,EPS)
         self.value_head.weight.data.uniform_(-EPS,EPS)
         self.optimizer = Adas(self.parameters(), lr=self.lr)
