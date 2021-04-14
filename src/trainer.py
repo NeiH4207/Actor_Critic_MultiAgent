@@ -31,6 +31,6 @@ class Trainer:
             loss.backward()
             model.optimize()
 
-            return value_loss.data.to('cpu').numpy(), policy_loss.to('cpu').data.numpy()
+            return value_loss.data.numpy(), policy_loss.data.numpy()
 
         self.train = train

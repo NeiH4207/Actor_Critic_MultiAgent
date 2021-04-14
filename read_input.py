@@ -1,9 +1,7 @@
 import random
 from copy import deepcopy as dcopy
 import numpy as np
-
-random.seed(3)
-            
+random.seed(1)            
 class Data():
     
     def __init__(self, MIN_SIZE, MAX_SIZE):
@@ -40,8 +38,8 @@ class Data():
             
             turns = random.randint(30, 70)
             
-            # n_agents = random.randint(2, 8)
-            n_agents = 1
+            n_agents = random.randint(2, 8)
+            # n_agents = 2
             
             coord = [0] * (n_agents * 2)
             
@@ -73,7 +71,7 @@ class Data():
                 treasure_coord[j + num_treasures] = [height- _x - 1, width- _y - 1, value]
             
                    
-            num_walls = 2
+            num_walls = 1
             
             wall_coord = [0] * (num_walls * 2)
             for j in range(num_walls):
@@ -107,8 +105,14 @@ class Data():
     
     def get_random_map(self):
         height = random.randint(self.MIN_SIZE, self.MAX_SIZE)
-        width = random.randint(self.MIN_SIZE, self.MAX_SIZE)
-            
+        # width = random.randint(self.MIN_SIZE, self.MAX_SIZE)
+        width = height
+        turns = random.randint(15, 30)
+        n_agents = random.randint(2, 8)
+        n_treasures = random.randint(n_agents, n_agents * 2)
+        # n_treasures = 0
+        # n_walls =  0
+        n_walls =  random.randint(int(height * width / 40), int(height * width / 30))
         score_matrix = []
         conquer_matrix = [[], []]
         mx = random.randint(3, 30)
@@ -126,11 +130,7 @@ class Data():
                     value = -value
                 score_matrix[i][j] =  value
                 score_matrix[height- i - 1][width- j - 1] = value
-        
-        turns = random.randint(25, 60)
-        
-        n_agents = random.randint(2, 8)
-        # n_agents = random.randint(2, self.MAX_SIZE / 2)
+                
         agent_pos = [[], []]
         
         
@@ -145,10 +145,9 @@ class Data():
             agent_pos[1]. append( [height - _x - 1, width - _y - 1])
         
             
-        num_treasures = random.randint(n_agents, 2 * n_agents)
-        # num_treasures = random.randint(2, 4)
+        # num_treasures = 0
         treasures = []
-        for j in range(num_treasures):
+        for j in range(n_treasures):
             _x, _y = random.randint(0, height- 1), random.randint(0, width- 1)
             while  _x == _y or matrix[_x][_y] > 0: 
                 _x = random.randint(0, height- 1)
@@ -162,11 +161,12 @@ class Data():
             treasures.append([height- _x - 1, width- _y - 1, value])
         
                
-        num_walls = random.randint(int(height * width / 35), int(height * width / 20))
-        # num_walls = random.randint(2, 4)
+        # num_walls = random.randint(int(height * width / 40), int(height * width / 30))
+        # num_walls = random.randint(2, 2)
+        # num_walls = 0
         
         wall_coords = []
-        for j in range(num_walls):
+        for j in range(n_walls):
             _x, _y = random.randint(0, height- 1), random.randint(0, width- 1)
             while  _x == _y or matrix[_x][_y] > 0: 
                 _x = random.randint(0, height- 1)

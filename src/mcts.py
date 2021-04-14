@@ -10,12 +10,12 @@ import collections
 import numpy as np
 
 # Exploration constant
-c_PUCT = 1.25
+c_PUCT = 0.4
 # Dirichlet noise alpha parameter.
 D_NOISE_ALPHA = 0.03
 # Number of steps into the episode after which we always select the
 # action with highest action probability rather than selecting randomly
-TEMP_THRESHOLD = -1
+TEMP_THRESHOLD = 6
 
 
 class DummyNode:
@@ -44,7 +44,7 @@ class MCTSNode:
     environment state.
     """
 
-    def __init__(self, state, n_actions, TreeEnv, action=None, parent=None, player_ID = None, agent_ID = 0):
+    def __init__(self, state, n_actions, TreeEnv, action=None, agent_pos = None, parent=None, player_ID = None, agent_ID = 0):
         """
         :param state: State that the node should hold.
         :param n_actions: Number of actions that can be performed in each
@@ -64,6 +64,7 @@ class MCTSNode:
         self.parent = parent
         self.action = action
         self.state = state
+        self.agent_pos = agent_pos
         self.n_actions = n_actions
         self.player_ID = player_ID
         self.agent_ID = agent_ID
@@ -111,7 +112,7 @@ class MCTSNode:
 
     @property
     def child_U(self):
-        return (c_PUCT * math.sqrt(1 + self.N) *
+        return (c_PUCT * math.sqrt(1 + self.N) * 
                 self.child_prior / (1 + self.child_N))
 
     @property
@@ -155,11 +156,12 @@ class MCTSNode:
         """
         if action not in self.children:
             # Obtain state following given action.
-            new_state, player_ID, agent_ID = self.TreeEnv.next_state(self.state, action, 
+            new_state, agent_pos, player_ID, agent_ID = self.TreeEnv.next_state(
+                                                self.state, action, self.agent_pos,
                                                 player_ID = self.player_ID, 
                                                 agent_ID = self.agent_ID)
             self.children[action] = MCTSNode(new_state, self.n_actions,
-                                             self.TreeEnv, action=action, 
+                                             self.TreeEnv, action=action, agent_pos = agent_pos,
                                              parent=self, player_ID=player_ID, 
                                              agent_ID=agent_ID)
         return self.children[action]
@@ -240,13 +242,10 @@ class MCTSNode:
         :param value: Value estimate to be propagated.
         :param up_to: The node to propagate until.
         """
-        if self.player_ID == 0:
-            self.W += value
-        else:
-            self.W -= value
+        self.W += value
         if self.parent is None or self is up_to:
             return
-        self.parent.backup_value(value, up_to)
+        self.parent.backup_value(-value, up_to)
 
     def is_done(self):
         return self.TreeEnv.is_done_state(self.state, self.depth)
@@ -312,9 +311,11 @@ class MCTS:
         self.root = None
 
     def initialize_search(self, state=None):
-        init_state = self.TreeEnv.get_state(player = 0, agent_id = 0)
+        init_state = self.TreeEnv.get_state(player = 0)
         n_actions = self.TreeEnv.n_actions
-        self.root = MCTSNode(init_state, n_actions, self.TreeEnv, player_ID = 0, agent_ID = 0)
+        self.root = MCTSNode(init_state, n_actions, self.TreeEnv, 
+                             agent_pos = self.TreeEnv.agent_pos, 
+                             player_ID = 0, agent_ID = 0)
         # Number of steps into the episode after which we always select the
         # action with highest action probability rather than selecting randomly
         self.temp_threshold = TEMP_THRESHOLD
@@ -346,7 +347,7 @@ class MCTS:
             # If we encounter done-state, we do not need the agent network to
             # bootstrap. We can backup the value right away.
             if leaf.is_done():
-                value = self.TreeEnv.get_return(leaf.state, leaf.player_ID)
+                value = self.TreeEnv.get_return(leaf.state, leaf.parent.state, leaf.player_ID)
                 leaf.backup_value(value, up_to=self.root)
                 continue
             # Otherwise, discourage other threads to take the same trajectory
@@ -358,7 +359,8 @@ class MCTS:
         # Evaluate the leaf-states all at once and backup the value estimates.
         if leaves:
             action_probs, values = self.agent_netw.step(
-                self.TreeEnv.get_obs_for_states([leaf.state for leaf in leaves]))
+                self.TreeEnv.get_states_for_step([leaf.state for leaf in leaves]),
+                self.TreeEnv.get_agents_for_step([leaf.agent_ID for leaf in leaves]))
             for leaf, action_prob, value in zip(leaves, action_probs, values):
                 leaf.revert_virtual_loss(up_to=self.root)
                 leaf.incorporate_estimates(action_prob, value, up_to=self.root)
@@ -368,7 +370,7 @@ class MCTS:
         """
         Selects an action for the root state based on the visit counts.
         """
-        if self.root.depth < self.temp_threshold:
+        if self.root.depth > self.temp_threshold:
             action = np.argmax(self.root.child_N)
         else:
             cdf = self.root.child_N.cumsum()
@@ -385,14 +387,15 @@ class MCTS:
         :param action: Action to take for the root state.
         """
         # Store data to be used as experience tuples.
-        ob = self.TreeEnv.get_obs_for_states([self.root.state])
+        ob = self.TreeEnv.get_states_for_step([self.root.state])
         self.obs.append(ob)
         self.searches_pi.append(
             self.root.visits_as_probs()) # TODO: Use self.root.position.n < self.temp_threshold as argument
         self.qs.append(self.root.Q)
-        reward = self.TreeEnv.get_return(self.root.children[action].state,
-                                          self.root.children[action].player_ID)
-        self.rewards.append(reward)
+        # reward = self.TreeEnv.get_return(self.root.children[action].state,
+        #                                  self.root.state,
+        #                                  self.root.children[action].player_ID)
+        # self.rewards.append(reward)
 
         # Resulting state becomes new root of the tree.
         self.root = self.root.maybe_add_child(action)

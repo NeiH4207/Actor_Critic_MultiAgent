@@ -7,31 +7,25 @@ Created on Thu Nov  5 09:45:45 2020
 """
 import numpy as np
 import torch
-from src.model import ActorCritic, ActorCritic_2
-from src.replay_memory import ReplayBuffer
+from src.model import Policy
+from src.replay_memory import ReplayMemory
 from random import random, randint, choices, uniform
-from src import utils
 from src.utils import flatten
 import torch.nn.functional as F
 from sklearn.utils import shuffle
 from copy import deepcopy as dcopy
 from torch.distributions import Categorical
-
+torch.manual_seed(1)
 MAP_SIZE = 5
 
 class Agent():
-    def __init__(self, args, observation_dim, action_dim, agent_name):
-        self.observation_dim = observation_dim
-        self.action_dim = action_dim
+    def __init__(self, env, args):
         self.args = args
         self.iter = 0
         self.steps_done = 0
-        self.nrand_action = 0
+        self.n_actions = env.action_dim
         self.learn_step_counter = 0
         self.random_rate = self.args.initial_epsilon
-        self.agent_name = agent_name
-        self.observation_dim = observation_dim
-        self.action_dim = action_dim
         self.use_cuda = torch.cuda.is_available()
         self.chk_point_file_model = './Models/'
         self.value_loss = 0
@@ -40,18 +34,13 @@ class Agent():
         ''' Setup CUDA Environment'''
         self.device = 'cuda' if self.use_cuda else 'cpu'
         
-        self.model = ActorCritic(self.n_inputs, self.observation_dim, self.action_dim, self.args.lr, self.chk_point_file_model)
-        self.target_model = dcopy(self.model)
+        self.model = Policy(env)
         self.model.to(self.device)
         if self.args.load_checkpoint:
             self.load_models()
         
-        self.memories = ReplayBuffer(self.args.replay_memory_size)
+        self.memories = ReplayMemory(self.args.replay_memory_size, self.args.batch_size)
             
-            
-    def set_environment(self, n_agents):
-        self.n_agents = n_agents
-        
     def convert_one_hot(self, action):
         n_values = self.action_dim
         return np.eye(n_values, dtype = np.float32)[action]
@@ -70,23 +59,32 @@ class Agent():
         :return:
         """
         
-        log_probs, y_pred, rewards, next_states = self.model.get_data()
+        log_probs, y_pred, rewards = self.model.get_data()
         
         ''' ---------------------- optimize ----------------------
         Use target actor exploitation policy here for loss evaluation
         y_exp = r + gamma*Q'( s2, pi'(s2))
         y_pred = Q( s1, a1)
         '''
+        # print(rewards)
         # gae = torch.zeros(1, 1).to
-        for i in reversed(range(len(rewards) - 1)):
-            r = rewards[i + 1]
-            rewards[i] = rewards[i] + self.args.gamma * r
+        for i in reversed(range(len(rewards[0]) - 1)):
+            # rewards[i] = rewards[i] * self.args.discount + (1 - self.args.discount) * rewards[i + 1]
+            rewards[0][i] = rewards[0][i] + self.args.gamma * rewards[0][i + 1]
+            rewards[1][i] = rewards[1][i] + self.args.gamma * rewards[1][i + 1]
             # gae = gae * self.args.gamma + rewards[i] - y_pred[i] + \
             #     (y_pred[i + 1] if i < len(rewards) - 1 else 0)
         # print(rewards)
-        y_exp = torch.FloatTensor(rewards).unsqueeze(1).to(self.device)
-        y_pred = torch.stack(y_pred).unsqueeze(1).to(self.device)
-        log_probs = torch.stack(log_probs).unsqueeze(1).to(self.device)
+        
+        y_exp = torch.cat((torch.FloatTensor(rewards[0]).unsqueeze(1).to(self.device),
+                          torch.FloatTensor(rewards[1]).unsqueeze(1).to(self.device)),
+                          dim = 1).view(-1)
+        y_pred = torch.cat((torch.stack(y_pred[0]).unsqueeze(1).to(self.device),
+                          torch.stack(y_pred[1]).unsqueeze(1).to(self.device)),
+                          dim = 1).view(-1)
+        log_probs = torch.cat((torch.stack(log_probs[0]).unsqueeze(1).to(self.device),
+                          torch.stack(log_probs[1]).unsqueeze(1).to(self.device)),
+                          dim = 1).view(-1)
         advantage = y_exp - y_pred
         policy_loss = (-log_probs * advantage.detach()).mean()
         value_loss = advantage.pow(2).mean()
@@ -149,21 +147,35 @@ class Agent():
         
         self.steps_done += 1
         
-    def select_action(self, state):
+    def select_action(self, state, agent):
         state = torch.FloatTensor(state).to(self.device)
-        prob, state_value = self.model(state)
+        agent = torch.FloatTensor(agent).to(self.device)
+        prob, state_value = self.model(state, agent)
+        prob = torch.exp(prob)
+        prob = Categorical(prob)
         act = prob.sample()
         if random() < self.random_rate:
-            act = torch.tensor(randint(0, self.action_dim - 1)).to(self.device)
+            act = torch.tensor([randint(0, self.n_actions - 1)]).to(self.device)
+            self.random_rate *= 0.9999
+            self.random_rate = max(self.random_rate, self.args.final_epsilon)
         log_p = prob.log_prob(act)
         self.model.entropies += prob.entropy().mean()
         act = int(act.to('cpu').numpy())
         return act, log_p, state_value
     
-    
-    def select_action_exp(self, state, action):
+    def get_action(self, state, agent):
         state = torch.FloatTensor(state).to(self.device)
-        prob, state_value = self.model(state)
+        agent = torch.FloatTensor(agent).to(self.device)
+        prob, state_value = self.model(state, agent)
+        prob = torch.exp(prob).detach().to('cpu').numpy()[0]
+        act = np.argmax(prob)
+        return act
+    
+    def select_action_by_exp(self, state, agent, action):
+        state = torch.FloatTensor(state).to(self.device)
+        agent = torch.FloatTensor(agent).to(self.device)
+        _, prob, state_value = self.model(state, agent)
+        prob = Categorical(prob)
         log_p = prob.log_prob(torch.tensor(action).to(self.device))
         self.model.entropies += prob.entropy().mean()
         return action, log_p, state_value
@@ -172,43 +184,45 @@ class Agent():
     def select_action_smart(self, state, agent_pos, env):
         score_matrix, agents_matrix, conquer_matrix, \
                        treasures_matrix, walls_matrix = [dcopy(_) for _ in state]
-        actions = [0] * self.n_agents
+        actions = [0] * env.n_agents
         state = dcopy(state)
         agent_pos = dcopy(agent_pos)
         init_score = 0
-        order = shuffle(range(self.n_agents))
+        order = shuffle(range(env.n_agents))
+        exp_rewards = [0] * env.n_agents
         
-        for i in range(self.n_agents):
+        for i in range(env.n_agents):
             agent_id = order[i]
             
             act = 0
-            scores = [0] * 9
+            scores = [0] * 8
             mn = 1000
             mx = -1000
             valid_states = []
-            for act in range(9):
+            for act in range(env.n_actions):
                 _state, _agent_pos = dcopy([state, agent_pos])
-                valid, next_state, reward = env.soft_step(agent_id, _state, act, _agent_pos, predict=True)
+                valid, next_state, reward = env.soft_step(agent_id, _state, act, _agent_pos, exp=True)
                 scores[act] = reward - init_score
                 mn = min(mn, reward - init_score)
                 mx = max(mx, reward - init_score)
                 valid_states.append(valid)
-                
-            scores[0] = mn
-            for j in range(len(scores)):
-                scores[j] = (scores[j] - mn) / (mx - mn + 0.0001)
+            
+            # _scores = dcopy(scores)
+            # scores[0] = mn
+            # for j in range(len(scores)):
+            #     scores[j] = (scores[j] - mn) / (mx - mn + 0.0001)
     
-            sum = np.sum(scores) + 0.0001
-            for j in range(len(scores)):
-                scores[j] = scores[j] / sum
-                if(valid_states[j] is False):
-                    scores[j] = 0
+            # sum = np.sum(scores) + 0.0001
+            # for j in range(len(scores)):
+            #     scores[j] = scores[j] / sum
+            #     if valid_states[j] is False:
+            #         scores[j] = 0
             act = np.array(scores).argmax()
-            valid, state, score = env.soft_step(agent_id, state, act, agent_pos, predict=True)
+            valid, state, score = env.soft_step(agent_id, state, act, agent_pos, exp=True)
             init_score = score
             actions[agent_id] = act
-            
-        return actions
+            exp_rewards[agent_id] = mx
+        return actions, exp_rewards
     
     def select_action_test_not_predict(self, state):
         actions = []
@@ -228,11 +242,11 @@ class Agent():
             _state = flatten(_state)
             states.append(state)
             act = 0
-            scores = [0] * 9
+            scores = [0] * 8
             mn = 1000
             mx = -1000
             valid_states = []
-            for act in range(9):
+            for act in range(8):
                 _state, _agent_pos_1, _agent_pos_2 = dcopy([state, agent_pos_1, agent_pos_2])
                 valid, _state, _agent_pos, _score = self.env.fit_action(i, _state, act, _agent_pos_1, _agent_pos_2, False)
                 scores[act] = _score - init_score
@@ -245,9 +259,9 @@ class Agent():
             sum = np.sum(scores) + 0.0001
             for j in range(len(scores)):
                 scores[j] = scores[j] / sum
-                if(valid_states[j] is False):
+                if valid_states[j] is False:
                     scores[j] = 0
-            act = choices(range(9), scores)[0]
+            act = choices(range(self.env.n_actions), scores)[0]
             valid, state, agent_pos, score = self.env.fit_action(i, state, act, agent_pos_1, agent_pos_2)
             init_score = score
             actions.append(act)
@@ -258,7 +272,7 @@ class Agent():
     def select_random(self, state):
         actions = []
         for i in range(self.num_agents):
-            actions.append(randint(0, 8))
+            actions.append(randint(0, 7))
         return state, actions, [0] * self.num_agents, state 
     
     def save_models(self):
@@ -267,7 +281,7 @@ class Agent():
         :param episode_count: the count of episodes iterated
         :return:        
         """
-        self.model.save_checkpoint(self.agent_name)
+        self.model.save_checkpoint()
         
     def load_models(self):
         """
@@ -275,6 +289,7 @@ class Agent():
         :param episode: the count of episodes iterated (used to find the file name)
         :return:
         """
-        self.model.load_checkpoint(self.agent_name)
+        self.model.load_checkpoint(self.args.load_folder_file[0],
+                                   self.args.load_folder_file[1])
         
         self.model.eval()

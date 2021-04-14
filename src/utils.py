@@ -8,6 +8,84 @@ import torch
 import shutil
 import torch.autograd as Variable
 import matplotlib.pyplot as plt
+from collections import deque
+
+class dotdict(dict):
+    def __getattr__(self, name):
+        return self[name]
+
+def dtanh(x):
+    return 1 / np.cosh(x) ** (0.2)
+
+# print([dtanh(i) for i in range(10)])
+class AverageMeter(object):
+    """From https://github.com/pytorch/examples/blob/master/imagenet/main.py"""
+
+    def __init__(self, max_len = 100):
+        self.val = 0
+        self.avg = 0
+        self.sum = 0
+        self.count = 0
+        self.vals = deque(maxlen = max_len)
+        self.mean_vals = deque(maxlen = 10000)
+
+    def __repr__(self):
+        return f'{self.avg:.2e}'
+
+    def update(self, val, n=1):
+        self.val = val
+        self.sum += val * n
+        self.count += n
+        self.avg = self.sum / self.count
+        self.vals.append(val)
+        self.mean_vals.append(np.mean(self.vals))
+    
+    def plot(self, vtype = ''):
+        fig, ax = plt.subplots(figsize=(7, 4))
+        ax.grid()
+        ax.plot(self.mean_vals, color='red', label='trainning')
+        ax.set_xlabel('Episode', fontsize=16)
+        ax.set_ylabel(vtype, fontsize=16)
+    
+        plt.savefig('./Experiments/' + vtype + '.pdf',bbox_inches='tight')
+        plt.show()
+        
+# print([dtanh(i) for i in range(10)])
+class AverageMeter2(object):
+    """From https://github.com/pytorch/examples/blob/master/imagenet/main.py"""
+
+    def __init__(self, max_len = 100):
+        self.val1 = 0
+        self.val2 = 0
+        self.avg = 0
+        self.sum = 0
+        self.count = 0
+        self.vals = [deque(maxlen = max_len), deque(maxlen = max_len)]
+        self.mean_vals = [deque(maxlen = 10000), deque(maxlen = 10000)]
+
+    def __repr__(self):
+        return f'{self.avg:.2e}'
+
+    def update(self, val1, val2):
+        self.val1 = val1
+        self.val2 = val2
+        self.vals[0].append(val1)
+        self.vals[1].append(val2)
+        self.mean_vals[0].append(np.mean(self.vals[0]))
+        self.mean_vals[1].append(np.mean(self.vals[1]))
+    
+    def plot(self, vtype = ''):
+        fig, ax = plt.subplots(figsize=(7, 4))
+        ax.grid()
+        ax.plot(self.mean_vals[0], color='red', label='bot 1')
+        ax.plot(self.mean_vals[1], color='blue', label='bot 2')
+        ax.set_xlabel('Episode', fontsize=16)
+        ax.set_ylabel(vtype, fontsize=16)
+    
+        plt.savefig('./Experiments/' + vtype + '.pdf',bbox_inches='tight')
+        plt.show()
+        
+
 
 def vizualize(arr, name, cl = 'red'):
 #     ax.set_yticks(np.arange(0, 1.04, 0.15))
@@ -18,21 +96,25 @@ def vizualize(arr, name, cl = 'red'):
     plt.ylabel("Loss value")
 #     plt.xlim(-3, 3)
 #     plt.ylim(1000, 1220)
-    plt.plot(arr, color = cl, linewidth = 1.25)
+    plt.plot(arr, color = cl, linewidth = 0.9)
     # plt.legend(bbox_to_anchor=(0.785, 1), loc='upper left', borderaxespad=0.1)
     # name = name + '.pdf'
     plt.savefig(name,bbox_inches='tight')
     plt.show()
     
-def plot(values, export = True, cl = 'red'):
-    ax = plt.subplot(111)
+def plot(values, vtype = 'Scores'):
+    fig, ax = plt.subplots(figsize=(7, 4))
     ax.grid()
-    ax.set_title('Training')
     ax.set_xlabel('Episode')
-    ax.set_ylabel('Run Time')
-    ax.plot(values, color = cl)
-    if export:
-        plt.show()
+    ax.set_ylabel(vtype)
+    ax.plot(values[0], color='red', label='Bot 1')
+    ax.plot(values[1], color='blue', label='Bot 2')
+    ax.set_xlabel('Episode', fontsize=16)
+    ax.set_ylabel(vtype, fontsize=16)
+
+    plt.savefig('./Experiments/' + vtype + '.pdf',bbox_inches='tight')
+    plt.show()
+
 
 
 def flatten(data):
