@@ -21,8 +21,8 @@ from src.utils import plot, dotdict
 cargs = dotdict({
     'run_mode': 'test',
     'visualize': True,
-    'min_size': 7,
-    'max_size': 7,
+    'min_size': 6,
+    'max_size': 6,
     'n_games': 1,
     'num_iters': 20000,
     'n_epochs': 1000000,
@@ -53,7 +53,7 @@ args = [
         dotdict({
             'optimizer': 'adas',
             'lr': 1e-4,
-            'exp_rate': 0.5,
+            'exp_rate': 0.7,
             'gamma': 0.99,
             'tau': 0.01,
             'max_grad_norm': 0.3,

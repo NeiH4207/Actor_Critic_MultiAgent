@@ -107,8 +107,8 @@ class Data():
         height = random.randint(self.MIN_SIZE, self.MAX_SIZE)
         # width = random.randint(self.MIN_SIZE, self.MAX_SIZE)
         width = height
-        turns = random.randint(15, 30)
-        n_agents = random.randint(2, 8)
+        turns = random.randint(15, 20)
+        n_agents = random.randint(2, 4)
         n_treasures = random.randint(n_agents, n_agents * 2)
         # n_treasures = 0
         # n_walls =  0

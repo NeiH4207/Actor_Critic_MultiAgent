@@ -79,6 +79,8 @@ class Coach():
             # print(agent_pos, player_id, agent_id, depth)
             r = self.game.getGameEnded(board, player_id, agent_id, depth)
             if r != 0:
+                self.scores.update(self.game.players[0].total_score,
+                                   self.game.players[1].total_score)
                 # self.game.soft_reset()
                 data = Data(self.args.min_size, self.args.max_size)
                 self.game.__init__(data.get_random_map(), self.args.show_screen, self.args.max_size)
@@ -103,8 +105,6 @@ class Coach():
 
                 for _ in tqdm(range(self.args.numEps), desc="Self Play"):
                     iterationTrainExamples += self.executeEpisode()
-                    self.scores.update(self.game.players[0].total_score,
-                                       self.game.players[1].total_score)
                 
                 self.scores.plot()
 
