@@ -10,6 +10,7 @@ from read_input import Data
 from src.model import Policy
 from src.Coach import Coach
 from src.utils import dotdict
+import torch
 
 log = logging.getLogger(__name__)
 
@@ -21,14 +22,7 @@ args = dotdict({
     'n_games': 1,
     'n_maps': 1000,
     'show_screen': True,
-    'exp_rate': 0.0,
-    'gamma': 0.99,
-    'tau': 0.01,
-    'max_grad_norm': 0.3,
-    'num_channels': 64,
-    'batch_size': 256,
     'replay_memory_size': 10000,
-    'dropout': 0.6,
     'initial_epsilon': 0.1,
     'final_epsilon': 1e-4,
     'dir': './Models/',
@@ -40,7 +34,8 @@ args = dotdict({
     'numMCTSSims': 32,          # Number of games moves for MCTS to simulate.
     'arenaCompare': 40,         # Number of games to play during arena play to determine if new net will be accepted.
     'cpuct': 1,
-
+    'colab_train': False,
+    'colab_dir': "/content/drive/MyDrive/trainned_model/agent_mcts.pt",
     'checkpoint': './temp/',
     'load_model': False,
     'load_folder_file': ('Models','model.pt'),
@@ -57,6 +52,9 @@ def main():
         model.load_checkpoint(args.load_folder_file[0], args.load_folder_file[1])
     else:
         log.warning('Not loading a checkpoint!')
+
+    if args.colab_train:
+      model.load_colab_model(args.colab_dir)
 
     # log.info('Loading the Coach...')
     coach = Coach(env, model, args)

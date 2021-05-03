@@ -197,3 +197,9 @@ class Policy(nn.Module):
         checkpoint = torch.load(filepath, map_location=map_location)
         self.load_state_dict(checkpoint['state_dict'])
         print('-- Load model succesfull!')
+        
+    def load_colab_model(self, _dir):
+        self.load_state_dict(torch.load(_dir, map_location = self.device))
+        
+    def save_colab_model(self, _dir):
+        torch.save(self.state_dict(), _dir)

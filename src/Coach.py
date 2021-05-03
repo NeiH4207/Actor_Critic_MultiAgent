@@ -11,6 +11,7 @@ import numpy as np
 from tqdm import tqdm
 from src.utils import AverageMeter2
 # from Arena import Arena
+import torch
 from src.MCTS import MCTS
 
 log = logging.getLogger(__name__)
@@ -129,6 +130,8 @@ class Coach():
             # training new network, keeping a copy of the old one
             self.nnet.save_checkpoint(folder=self.args.load_folder_file[0], 
                                       filename=self.args.load_folder_file[1])
+            if self.args.colab_train:
+                self.nnet.save_colab_model(self.args.colab_dir)
             # self.pnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
             # pmcts = MCTS(self.game, self.pnet, self.args)
 
