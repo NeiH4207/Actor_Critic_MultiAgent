@@ -45,7 +45,7 @@ args = [
             'dropout': 0.6,
             'initial_epsilon': 0.0,
             'final_epsilon': 1e-4,
-            'load_folder_file': ('Models','model.pt'),
+            'load_folder_file': ('Models','agent_mcts.pt'),
             'load_checkpoint': True,
             'saved_checkpoint': True
         }),

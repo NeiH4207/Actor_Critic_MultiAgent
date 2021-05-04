@@ -21,7 +21,7 @@ args = dotdict({
     'lr': 0.0001,
     'dropout': 0.5,
     'epochs': 20,
-    'batch_size': 128,
+    'batch_size': 256,
     'cuda': torch.cuda.is_available(),
     'num_channels': 256,
     'optimizer': 'adas',
@@ -184,17 +184,13 @@ class Policy(nn.Module):
             'state_dict': self.state_dict(),
         }, filepath)
         
-    # def load_checkpoint(self, name):
-    #     # print('... loading checkpoint ...')
-    #     self.load_state_dict(torch.load('Models/' + name + '.pt', map_location = self.device))
         
     def load_checkpoint(self, folder='Models', filename='model.pt'):
         # https://github.com/pytorch/examples/blob/master/imagenet/main.py#L98
         filepath = os.path.join(folder, filename) 
         if not os.path.exists(filepath):
             raise ("No model in path {}".format(filepath))
-        map_location = None if self.device else 'cpu'
-        checkpoint = torch.load(filepath, map_location=map_location)
+        checkpoint = torch.load(filepath, map_location=self.device)
         self.load_state_dict(checkpoint['state_dict'])
         print('-- Load model succesfull!')
         

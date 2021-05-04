@@ -37,7 +37,7 @@ args = dotdict({
     'colab_train': False,
     'colab_dir': "/content/drive/MyDrive/trainned_model/agent_mcts.pt",
     'checkpoint': './temp/',
-    'load_model': False,
+    'load_model': True,
     'load_folder_file': ('Models','agent_mcts.pt'),
     'numItersForTrainExamplesHistory': 15,
     'saved_model': True
