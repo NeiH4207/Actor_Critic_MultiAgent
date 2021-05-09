@@ -1,7 +1,7 @@
 import random
 from copy import deepcopy as dcopy
 import numpy as np
-random.seed(1)            
+# random.seed(1)            
 class Data():
     
     def __init__(self, MIN_SIZE, MAX_SIZE):
