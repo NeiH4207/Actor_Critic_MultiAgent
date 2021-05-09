@@ -56,7 +56,7 @@ class MCTS():
             return probs
 
         counts = [x ** (1. / temp) for x in counts]
-        counts_sum = float(sum(counts))
+        counts_sum = float(sum(counts)) + 1e-8
         probs = [x / counts_sum for x in counts]
         return probs
 
