@@ -47,7 +47,7 @@ class AverageMeter(object):
         ax.set_xlabel('Episode', fontsize=16)
         ax.set_ylabel(vtype, fontsize=16)
     
-        plt.savefig('./Experiments/' + vtype + '.pdf',bbox_inches='tight')
+        # plt.savefig('./Experiments/' + vtype + '.pdf',bbox_inches='tight')
         plt.show()
         
 # print([dtanh(i) for i in range(10)])
