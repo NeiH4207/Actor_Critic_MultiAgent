@@ -1,5 +1,7 @@
 # Byte-compiled / optimized / DLL files
 Models/
+__pycache__/
+*ignore
 Experiments/
 temp/
 *.py[cod]
