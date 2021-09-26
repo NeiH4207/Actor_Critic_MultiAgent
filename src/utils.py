@@ -4,6 +4,7 @@
 
 import numbers
 import numpy as np
+import os
 import torch
 import shutil
 import torch.autograd as Variable
@@ -111,8 +112,9 @@ def plot(values, vtype = 'Scores'):
     ax.plot(values[1], color='blue', label='Bot 2')
     ax.set_xlabel('Episode', fontsize=16)
     ax.set_ylabel(vtype, fontsize=16)
-
-    plt.savefig('./Experiments/' + vtype + '.pdf',bbox_inches='tight')
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    dir_path = os.path.abspath(os.path.join(dir_path, os.pardir))
+    plt.savefig(dir_path + '/Experiments/' + vtype + '.pdf',bbox_inches='tight')
     plt.show()
 
 
