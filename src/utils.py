@@ -113,8 +113,9 @@ def plot(values, vtype = 'Scores'):
     ax.set_xlabel('Episode', fontsize=16)
     ax.set_ylabel(vtype, fontsize=16)
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    dir_path = os.path.abspath(os.path.join(dir_path, os.pardir))
-    plt.savefig(dir_path + '/Experiments/' + vtype + '.pdf',bbox_inches='tight')
+    dir_path = os.path.abspath(os.path.join(dir_path, os.pardir)) + '/Experiments/' 
+    if os.path.exists(dir_path):
+        plt.savefig(dir_path + vtype + '.pdf',bbox_inches='tight')
     plt.show()
 
 
