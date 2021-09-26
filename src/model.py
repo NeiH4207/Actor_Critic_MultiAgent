@@ -9,6 +9,7 @@ from torch.optim import Adam, SGD
 from collections import deque
 from tqdm import tqdm
 from src.utils import dotdict, AverageMeter, plot
+import matplotlib.pyplot as plt
 
 EPS = 0.001
 
@@ -164,11 +165,14 @@ class Policy(nn.Module):
                 self.reset_grad()
                 total_loss.backward()
                 self.optimize()
-        fig, axs = plt.subplots(1, 2)
-        axs[0, 0].set_title('PolicyLoss')
-        axs[0, 0].plot(self.pi_losses.mean_vals, 'tab:orange')
-        axs[0, 1].set_title('ValueLoss')
-        axs[0, 1].plot(self.v_losses.mean_vals, 'tab:orange')
+        plt.rcParams["figure.figsize"] = (20,5)
+        plt.subplot(1, 2, 1)
+        plt.title('PolicyLoss')
+        plt.plot(list(self.pi_losses.mean_vals)[3:], 'r')
+        plt.subplot(1, 2, 2)
+        plt.title('ValueLoss')
+        plt.plot(list(self.v_losses.mean_vals)[3:], 'b')
+        plt.show()
         # self.pi_losses.plot('PolicyLoss')
         # self.v_losses.plot('ValueLoss')
     

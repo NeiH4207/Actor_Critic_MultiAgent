@@ -151,7 +151,7 @@ def test():
             wl_mean[i].append(np.mean(wl[i]))
             score_mean[i].append(np.mean(score[i]))
                 
-        if _ep % 50 == 49:
+        if _ep % 5 == 4:
             plot(wl_mean, vtype = 'Win')
             plot(score_mean, vtype = 'Score')
             print("Time: {0: >#.3f}s". format(1000*(end - start)))

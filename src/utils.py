@@ -42,7 +42,7 @@ class AverageMeter(object):
         self.mean_vals.append(np.mean(self.vals))
     
     def plot(self, vtype = ''):
-        fig, ax = plt.subplots(figsize=(7, 4))
+        fig, ax = plt.subplots(figsize=(6, 3))
         ax.grid()
         ax.plot(self.mean_vals, color='red', label='trainning')
         ax.set_xlabel('Episode', fontsize=16)
