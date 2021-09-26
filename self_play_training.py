@@ -34,7 +34,7 @@ args = dotdict({
     'dir': './Models/',
     'load_folder_file': ('Models','model.pt'),  
     'show_screen': False,
-    'load_checkpoint': True,
+    'load_checkpoint': False,
     'saved_checkpoint': True
 })
 

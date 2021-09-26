@@ -65,7 +65,7 @@ args = [
 def train(): 
     data = Data(cargs.min_size, cargs.max_size)
     env = Environment(data.get_random_map(), cargs.show_screen, cargs.max_size)
-    agent = [Agent(env, args[0], 'agent_1'), Agent(env, args[1], 'agent_2')]
+    agent = [Agent(env, args[0]), Agent(env, args[1])]
     wl_mean, score_mean, l_val_mean =\
         [[deque(maxlen = 10000), deque(maxlen = 10000)]  for _ in range(3)]
     wl, score, l_val = [[deque(maxlen = 1000), deque(maxlen = 1000)] for _ in range(3)]

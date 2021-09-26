@@ -1,5 +1,7 @@
 from copy import deepcopy as dcopy
 from math import sqrt, acos, pi
+from typing import List
+
 from GameBoard.game_board import Screen
 from src.utils import flatten
 import numpy as np
@@ -319,7 +321,7 @@ class Environment(object):
                 agent_state[player_ID][ag_id][x][y] = 1
                     
         index = agent_state[0][agent_ID]
-        onehot_nturns = [0] * self.max_n_turns
+        onehot_nturns: list[int] = [0] * self.max_n_turns
         onehot_nturns[self.remaining_turns] = 1
         onehot_players = [1, 1]
         if player_ID == 0:

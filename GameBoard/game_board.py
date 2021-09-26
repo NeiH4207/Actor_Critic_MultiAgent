@@ -4,6 +4,7 @@ import numpy as np
 import random
 import time
 from copy import deepcopy as dcopy
+import os 
 
 # initializes pygame
 
@@ -29,6 +30,7 @@ class Screen():
             self.SQUARE_SIZE = int(self.HEIGHT / 20)
             self.color_A = (255, 172,  88)
             self.color_B = (129, 188, 255)
+            self.dir_path = os.path.dirname(os.path.realpath(__file__))
             if env.show_screen:
                 self.load_image()
                 pygame.display.set_caption( 'ProCon-2020' ) 
@@ -37,18 +39,19 @@ class Screen():
         pygame.display.update()
 
     def load_image(self):
+        print(self.dir_path)
         self.agent_A_img = pygame.transform.scale(
-            pygame.image.load('GameBoard/images/agent1.png'), (self.SQUARE_SIZE, self.SQUARE_SIZE))
+            pygame.image.load(self.dir_path + '/images/agent1.png'), (self.SQUARE_SIZE, self.SQUARE_SIZE))
         self.agent_B_img = pygame.transform.scale(
-            pygame.image.load('GameBoard/images/agent2.png'), (self.SQUARE_SIZE, self.SQUARE_SIZE))
+            pygame.image.load(self.dir_path + '/images/agent2.png'), (self.SQUARE_SIZE, self.SQUARE_SIZE))
         self.wall_img =  pygame.transform.scale(
-            pygame.image.load('GameBoard/images/wall.jpg'), (self.SQUARE_SIZE, self.SQUARE_SIZE))
+            pygame.image.load(self.dir_path + '/images/wall.jpg'), (self.SQUARE_SIZE, self.SQUARE_SIZE))
         self.background_img = pygame.transform.scale(
-            pygame.image.load('GameBoard/images/background.jpg'), (626, 966))
+            pygame.image.load(self.dir_path + '/images/background.jpg'), (626, 966))
         self.table_img =  pygame.transform.scale(
-            pygame.image.load('GameBoard/images/board.png'), (400, 350))
+            pygame.image.load(self.dir_path + '/images/board.png'), (400, 350))
         self.treasure_img = pygame.transform.scale(
-            pygame.image.load('GameBoard/images/treasure.jpg'),
+            pygame.image.load(self.dir_path + '/images/treasure.jpg'),
             (int(self.SQUARE_SIZE / 2), int(self.SQUARE_SIZE / 2)))  
         
     def coord(self, x, y):

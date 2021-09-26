@@ -31,13 +31,13 @@ args = dotdict({
     'tempThreshold': 15,        #
     'updateThreshold': 0.6,     # During arena playoff, new neural net will be accepted if threshold or more of games are won.
     'maxlenOfQueue': 10000,    # Number of game examples to train the neural networks.
-    'numMCTSSims': 5,          # Number of games moves for MCTS to simulate.
+    'numMCTSSims': 25,          # Number of games moves for MCTS to simulate.
     'arenaCompare': 40,         # Number of games to play during arena play to determine if new net will be accepted.
     'cpuct': 1,
     'colab_train': False,
     'colab_dir': "/content/drive/MyDrive/trainned_model/agent_mcts.pt",
     'checkpoint': './temp/',
-    'load_model': False,
+    'load_model': True,
     'load_folder_file': ('Models','agent_mcts.pt'),
     'numItersForTrainExamplesHistory': 15,
     'saved_model': True
@@ -56,12 +56,16 @@ def main():
     # log.info('Loading the Coach...')
     coach = Coach(env, model, args)
 
-    if args.load_model:
-        # log.info("Loading 'trainExamples' from file...")
-        coach.loadTrainExamples()
+    # if args.load_model:
+    #     # log.info("Loading 'trainExamples' from file...")
+    #     coach.loadTrainExamples()
 
     # log.info('Starting the learning process !')
-    coach.learn()
+    for i in range(args.numIters):
+        # bookkeeping
+        log.info(f'Starting Iter #{i} ...')
+        coach.learn()
+        coach.game = Environment(data.get_random_map(), args.show_screen, args.max_size)
 
 
 if __name__ == "__main__":

@@ -21,8 +21,8 @@ from src.utils import plot, dotdict
 cargs = dotdict({
     'run_mode': 'test',
     'visualize': True,
-    'min_size': 6,
-    'max_size': 6,
+    'min_size': 7,
+    'max_size': 7,
     'n_games': 1,
     'num_iters': 20000,
     'n_epochs': 1000000,

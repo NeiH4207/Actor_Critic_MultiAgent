@@ -1,7 +1,9 @@
 import logging
 import os
 import sys
+from read_input import Data
 from collections import deque
+from src.environment import Environment
 from pickle import Pickler, Unpickler
 from random import shuffle
 from read_input import Data
@@ -82,9 +84,9 @@ class Coach():
             if r != 0:
                 self.scores.update(self.game.players[0].total_score,
                                    self.game.players[1].total_score)
-                # self.game.soft_reset()
+                self.game.soft_reset()
                 data = Data(self.args.min_size, self.args.max_size)
-                self.game.__init__(data.get_random_map(), self.args.show_screen, self.args.max_size)
+                # self.game.__init__(data.get_random_map(), self.args.show_screen, self.args.max_size)
                 # print([r * ((-1) ** (x[1] != player_id)) for x in trainExamples])
                 return [(x[0], x[3], x[2], r * ((-1) ** (x[1] != player_id))) for x in trainExamples]
 
@@ -97,41 +99,37 @@ class Coach():
         only if it wins >= updateThreshold fraction of games.
         """
 
-        for i in range(1, self.args.numIters + 1):
-            # bookkeeping
-            log.info(f'Starting Iter #{i} ...')
-            # examples of the iteration
-            if not self.skipFirstSelfPlay or i > 1:
-                iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
+        # examples of the iteration
+        if not self.skipFirstSelfPlay or i > 1:
+            iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
 
-                for _ in tqdm(range(self.args.numEps), desc="Self Play"):
-                    iterationTrainExamples += self.executeEpisode()
-                
-                self.scores.plot()
+            for _ in tqdm(range(self.args.numEps), desc="Self Play"):
+                iterationTrainExamples += self.executeEpisode()
+            self.scores.plot()
 
-                # save the iteration examples to the history 
-                self.trainExamplesHistory.append(iterationTrainExamples)
+            # save the iteration examples to the history 
+            self.trainExamplesHistory.append(iterationTrainExamples)
 
-            if len(self.trainExamplesHistory) > self.args.numItersForTrainExamplesHistory:
-                log.warning(
-                    f"Removing the oldest entry in trainExamples. len(trainExamplesHistory) = {len(self.trainExamplesHistory)}")
-                self.trainExamplesHistory.pop(0)
-            # backup history to a file
-            # NB! the examples were collected using the model from the previous iteration, so (i-1)  
-            self.saveTrainExamples()
+        if len(self.trainExamplesHistory) > self.args.numItersForTrainExamplesHistory:
+            log.warning(
+                f"Removing the oldest entry in trainExamples. len(trainExamplesHistory) = {len(self.trainExamplesHistory)}")
+            self.trainExamplesHistory.pop(0)
+        # backup history to a file
+        # NB! the examples were collected using the model from the previous iteration, so (i-1)  
+        # self.saveTrainExamples()
 
-            # shuffle examples before training
-            trainExamples = []
-            for e in self.trainExamplesHistory:
-                trainExamples.extend(e)
-            shuffle(trainExamples)
-            self.nnet.train_examples(trainExamples)
-            
-            # training new network, keeping a copy of the old one
-            self.nnet.save_checkpoint(folder=self.args.load_folder_file[0], 
-                                      filename=self.args.load_folder_file[1])
-            if self.args.colab_train:
-                self.nnet.save_colab_model(self.args.colab_dir)
+        # shuffle examples before training
+        trainExamples = []
+        for e in self.trainExamplesHistory:
+            trainExamples.extend(e)
+        shuffle(trainExamples)
+        self.nnet.train_examples(trainExamples)
+        
+        # training new network, keeping a copy of the old one
+        self.nnet.save_checkpoint(folder=self.args.load_folder_file[0], 
+                                  filename=self.args.load_folder_file[1])
+        if self.args.colab_train:
+            self.nnet.save_colab_model(self.args.colab_dir)
             # self.pnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
             # pmcts = MCTS(self.game, self.pnet, self.args)
 

@@ -10,7 +10,7 @@ from collections import deque
 from tqdm import tqdm
 from src.utils import dotdict, AverageMeter, plot
 
-EPS = 0.003
+EPS = 0.001
 
 def fanin_init(size, fanin=None):
 	fanin = fanin or size[0]
@@ -18,7 +18,7 @@ def fanin_init(size, fanin=None):
 	return torch.Tensor(size).uniform_(-v, v)
 
 args = dotdict({
-    'lr': 0.0001,
+    'lr': 0.005,
     'dropout': 0.5,
     'epochs': 20,
     'batch_size': 256,
@@ -192,6 +192,7 @@ class Policy(nn.Module):
             raise ("No model in path {}".format(filepath))
         checkpoint = torch.load(filepath, map_location=self.device)
         self.load_state_dict(checkpoint['state_dict'])
+        # self.load_state_dict(checkpoint)
         print('-- Load model succesfull!')
         
     def load_colab_model(self, _dir):
