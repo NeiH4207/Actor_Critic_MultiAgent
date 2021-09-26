@@ -21,8 +21,8 @@ from src.utils import plot, dotdict
 cargs = dotdict({
     'run_mode': 'test',
     'visualize': True,
-    'min_size': 7,
-    'max_size': 7,
+    'min_size': 10,
+    'max_size': 10,
     'n_games': 1,
     'num_iters': 20000,
     'n_epochs': 1000000,
@@ -46,14 +46,16 @@ args = [
             'initial_epsilon': 0.0,
             'final_epsilon': 1e-4,
             'load_folder_file': ('Models','agent_mcts.pt'),
-            'load_checkpoint': True,
+            'colab_train': True,
+            'colab_dir': "/content/drive/MyDrive/trainned_model/agent_mcts.pt",
+            'load_checkpoint': False,
             'saved_checkpoint': True
         }),
         
         dotdict({
             'optimizer': 'adas',
             'lr': 1e-4,
-            'exp_rate': 0.7,
+            'exp_rate': 0.0,
             'gamma': 0.99,
             'tau': 0.01,
             'max_grad_norm': 0.3,
@@ -65,6 +67,8 @@ args = [
             'initial_epsilon': 0.0,
             'final_epsilon': 0.01,
             'load_folder_file': ('Models','agent_1.pt'),
+            'colab_train': False,
+            'colab_dir': "/content/drive/MyDrive/trainned_model/agent_mcts.pt",
             'load_checkpoint': False,
             'saved_checkpoint': True
         })
@@ -74,6 +78,10 @@ def test():
     data = Data(cargs.min_size, cargs.max_size)
     env = Environment(data.get_random_map(), cargs.show_screen, cargs.max_size)
     agent = [Agent(env, args[0]), Agent(env, args[1])]
+    if args[0].colab_train:
+        agent[0].model.load_state_dict(torch.load(args[0].colab_dir, map_location = agent[0].model.device))
+    if args[1].colab_train:
+        agent[1].model.load_state_dict(torch.load(args[1].colab_dir, map_location = agent[1].model.device))
     wl_mean, score_mean = [[deque(maxlen = 10000), deque(maxlen = 10000)]  for _ in range(2)]
     wl, score = [[deque(maxlen = 1000), deque(maxlen = 1000)] for _ in range(2)]
     cnt_w, cnt_l = 0, 0
@@ -148,7 +156,7 @@ def test():
             plot(score_mean, vtype = 'Score')
             print("Time: {0: >#.3f}s". format(1000*(end - start)))
         env.soft_reset()
-        # env = Environment(data.get_random_map(), cargs.show_screen, cargs.max_size)
+        env = Environment(data.get_random_map(), cargs.show_screen, cargs.max_size)
 
 if __name__ == "__main__":
     test()

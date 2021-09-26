@@ -164,8 +164,13 @@ class Policy(nn.Module):
                 self.reset_grad()
                 total_loss.backward()
                 self.optimize()
-        self.pi_losses.plot('PolicyLoss')
-        self.v_losses.plot('ValueLoss')
+        fig, axs = plt.subplots(1, 2)
+        axs[0, 0].set_title('PolicyLoss')
+        axs[0, 0].plot(self.pi_losses.mean_vals, 'tab:orange')
+        axs[0, 1].set_title('ValueLoss')
+        axs[0, 1].plot(self.v_losses.mean_vals, 'tab:orange')
+        # self.pi_losses.plot('PolicyLoss')
+        # self.v_losses.plot('ValueLoss')
     
     def loss_pi(self, targets, outputs):
         return -torch.sum(targets * outputs) / targets.size()[0]

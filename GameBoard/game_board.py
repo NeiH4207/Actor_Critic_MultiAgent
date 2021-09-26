@@ -39,7 +39,6 @@ class Screen():
         pygame.display.update()
 
     def load_image(self):
-        print(self.dir_path)
         self.agent_A_img = pygame.transform.scale(
             pygame.image.load(self.dir_path + '/images/agent1.png'), (self.SQUARE_SIZE, self.SQUARE_SIZE))
         self.agent_B_img = pygame.transform.scale(

@@ -17,8 +17,8 @@ log = logging.getLogger(__name__)
 args = dotdict({
     'run_mode': 'train',
     'visualize': True,
-    'min_size': 7,
-    'max_size': 7,
+    'min_size': 10,
+    'max_size': 10,
     'n_games': 1,
     'n_maps': 1000,
     'show_screen': True,
