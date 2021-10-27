@@ -318,10 +318,10 @@ class Environment(object):
     def get_agent_pos_all(self):
         return dcopy(self.agent_pos)
     
-    def get_valid_moves(self, board, agent_pos, player, agent):
+    def get_valid_moves(self, board, coord):
         # return a fixed size binary vector
         valids = [1] * self.n_actions
-        x, y = agent_pos[player][agent]
+        x, y = coord
         for act in range(self.n_actions):
             x1, y1 = self.next_action(x, y, act)
             ''' invalid checking '''
@@ -910,7 +910,6 @@ class Environment(object):
                     self.screen.reset_square(coord, player_id, agent_ID)
             self.screen.show_score()
         
-        if render: self.render()
         
         reward = (self.players[0].total_score - self.players[1].total_score - \
             self.players[0].old_score + self.players[1].old_score)
@@ -918,6 +917,20 @@ class Environment(object):
             self.players[player_ID].old_score = self.players[player_ID].total_score
             # self.players[player_ID].show_scores()
             
+        _board = dcopy(self.observation)
+        _board[0] = self.norm_score_board
+        title_scores, treasure_scores, area_scores = \
+            self.compute_score(_board, _board)
+
+        for player in range(self.num_players):
+            self.players[player].title_score = title_scores[player]
+            self.players[player].treasure_score += treasure_scores[player]
+            self.players[player].area_score = area_scores[player]
+            
+        if render: 
+            self.screen.show_score()
+            self.render()
+        
         self.remaining_turns -= 1
         terminate = (self.remaining_turns == 0)
         # if terminate:

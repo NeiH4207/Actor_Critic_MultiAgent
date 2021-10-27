@@ -12,8 +12,8 @@ import time
 import numpy as np
 from tqdm import tqdm
 from src.utils import AverageMeter2
+import matplotlib.pyplot as plt
 # from Arena import Arena
-import torch
 from src.MCTS import MCTS
 
 log = logging.getLogger(__name__)
@@ -91,8 +91,8 @@ class Coach():
                 self.scores.update(self.game.players[0].total_score,
                                    self.game.players[1].total_score)
                 self.game.soft_reset()
-                # data = Data(self.args.min_size, self.args.max_size)
-                # self.game.__init__(data.get_random_map(), self.args.show_screen, self.args.max_size)
+                data = Data(self.args.min_size, self.args.max_size)
+                self.game.__init__(data.get_random_map(), self.args.show_screen, self.args.max_size)
                 # print([r * ((-1) ** (x[1] != player_id)) for x in trainExamples])
                 return [(x[0], x[3], x[2], r * ((-1) ** (x[1] != player_id))) for x in trainExamples]
 
@@ -124,6 +124,7 @@ class Coach():
             self.trainExamplesHistory.pop(0)
             
         # backup history to a file
+        self.saveTrainExamples()
 
         # shuffle examples before training
         trainExamples = []
@@ -132,12 +133,22 @@ class Coach():
         shuffle(trainExamples)
         self.nnet.train_examples(trainExamples)
         
+        if self.args.visualize:
+            plt.rcParams["figure.figsize"] = (20,5)
+            plt.subplot(1, 2, 1)
+            plt.title('PolicyLoss')
+            plt.plot(list(self.nnet.pi_losses.mean_vals)[3:], 'r')
+            plt.subplot(1, 2, 2)
+            plt.title('ValueLoss')
+            plt.plot(list(self.nnet.v_losses.mean_vals)[3:], 'b')
+            plt.show()
         # training new network, keeping a copy of the old one
         self.nnet.save_checkpoint(folder=self.args.load_folder_file[0], 
                                   filename=self.args.load_folder_file[1])
         if self.args.colab_train:
             self.nnet.save_colab_model(self.args.colab_dir)
 
+        
     def getCheckpointFile(self):
         return 'checkpoint_' + 'pt'
 

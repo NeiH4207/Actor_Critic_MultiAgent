@@ -77,8 +77,6 @@ class AverageMeter2(object):
     
     def plot(self, vtype = ''):
         plt.rcParams["figure.figsize"] = (6,3)
-        print(self.mean_vals[0])
-        print(self.mean_vals[1])
         plt.plot(self.mean_vals[0], color='red', label='bot 1')
         plt.plot(self.mean_vals[1], color='blue', label='bot 2')
         plt.legend()

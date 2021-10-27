@@ -104,8 +104,7 @@ class MCTS():
             # print(self.Ps[s])
             # print(v)
             # time.sleep(5)
-            valids = self.game.get_valid_moves(canonicalBoard, agent_pos, 
-                                             player_id, agent_id)
+            valids = self.game.get_valid_moves(canonicalBoard, agent_pos[player_id][agent_id])
             self.Ps[s] = self.Ps[s] * valids  # masking invalid moves
             sum_Ps_s = np.sum(self.Ps[s])
             if sum_Ps_s > 0:

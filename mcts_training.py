@@ -16,22 +16,19 @@ log = logging.getLogger(__name__)
 
 args = dotdict({
     'run_mode': 'train',
-    'visualize': True,
-    'min_size': 8,
-    'max_size': 10,
-    'n_games': 1,
-    'n_maps': 1000,
+    'visualize': False,
+    'min_size': 10,
+    'max_size': 20,
     'show_screen': True,
-    'replay_memory_size': 10000,
+    'replay_memory_size': 50000,
     'initial_epsilon': 0.1,
     'final_epsilon': 1e-4,
-    'dir': './Models/',
     'numIters': 1000,
-    'numEps': 3,              # Number of complete self-play games to simulate during a new iteration.
-    'tempThreshold': 15,        #
+    'numEps': 20,              # Number of complete self-play games to simulate during a new iteration.
+    'tempThreshold': 4,        #
     'updateThreshold': 0.6,     # During arena playoff, new neural net will be accepted if threshold or more of games are won.
     'maxlenOfQueue': 10000,    # Number of game examples to train the neural networks.
-    'numMCTSSims': 5,          # Number of games moves for MCTS to simulate.
+    'numMCTSSims': 10,          # Number of games moves for MCTS to simulate.
     'arenaCompare': 40,         # Number of games to play during arena play to determine if new net will be accepted.
     'cpuct': 1,
     'colab_train': False,

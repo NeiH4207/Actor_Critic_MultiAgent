@@ -12,8 +12,8 @@ class Data():
         height = random.randint(self.MIN_SIZE, self.MAX_SIZE)
         # width = random.randint(self.MIN_SIZE, self.MAX_SIZE)
         width = height
-        turns = random.randint(20, 50)
-        n_agents = random.randint(1, 4)
+        turns = random.randint(30, 60)
+        n_agents = random.randint(2, 8)
         n_treasures = random.randint(n_agents, n_agents * 2)
         # n_treasures = 0
         # n_walls =  0
@@ -50,6 +50,7 @@ class Data():
             agent_pos[1]. append( [height - _x - 1, width - _y - 1])
         
             
+        num_walls = random.randint(int(height * width / 40), int(height * width / 30))
         # num_treasures = 0
         treasures = []
         for j in range(n_treasures):
@@ -66,7 +67,7 @@ class Data():
             treasures.append([height- _x - 1, width- _y - 1, value])
         
                
-        # num_walls = random.randint(int(height * width / 40), int(height * width / 30))
+        num_walls = random.randint(int(height * width / 40), int(height * width / 30))
         # num_walls = random.randint(2, 2)
         # num_walls = 0
         

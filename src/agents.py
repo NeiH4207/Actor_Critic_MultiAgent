@@ -15,22 +15,23 @@ import torch.nn.functional as F
 from sklearn.utils import shuffle
 from copy import deepcopy as dcopy
 from torch.distributions import Categorical
+import logging
+log = logging.getLogger(__name__)
 torch.manual_seed(1)
 MAP_SIZE = 5
 
 class Agent():
     def __init__(self, env, args):
         self.args = args
+        self.env = env
         self.iter = 0
         self.steps_done = 0
         self.n_actions = env.action_dim
         self.learn_step_counter = 0
-        self.random_rate = self.args.initial_epsilon
         self.use_cuda = torch.cuda.is_available()
         self.chk_point_file_model = './Models/'
         self.value_loss = 0
         self.policy_loss = 0
-        self.n_inputs = 8
         ''' Setup CUDA Environment'''
         self.device = 'cuda' if self.use_cuda else 'cpu'
         
@@ -38,8 +39,9 @@ class Agent():
         self.model.to(self.device)
         if self.args.load_checkpoint:
             self.load_models()
-        
-        self.memories = ReplayMemory(self.args.replay_memory_size, self.args.batch_size)
+            
+        if self.args.run_mode == 'train':
+            self.memories = ReplayMemory(self.args.replay_memory_size, self.args.batch_size)
             
     def convert_one_hot(self, action):
         n_values = self.action_dim
@@ -154,20 +156,33 @@ class Agent():
         prob = torch.exp(prob)
         prob = Categorical(prob)
         act = prob.sample()
-        if random() < self.random_rate:
+        if random() < self.args.random_rate:
             act = torch.tensor([randint(0, self.n_actions - 1)]).to(self.device)
-            self.random_rate *= 0.9999
-            self.random_rate = max(self.random_rate, self.args.final_epsilon)
+            self.args.random_rate *= 0.9999
+            self.args.random_rate = max(self.args.random_rate, self.args.final_epsilon)
         log_p = prob.log_prob(act)
         self.model.entropies += prob.entropy().mean()
         act = int(act.to('cpu').numpy())
         return act, log_p, state_value
     
-    def get_action(self, state, agent):
+    def get_action(self, state, agent, cur_state, cur_agent_pos):
         state = torch.FloatTensor(state).to(self.device)
         agent = torch.FloatTensor(agent).to(self.device)
         prob, state_value = self.model(state, agent)
         prob = torch.exp(prob).detach().to('cpu').numpy()[0]
+        valids = self.env.get_valid_moves(cur_state, cur_agent_pos)
+        prob = prob * valids  # masking invalid moves
+        sum_s = np.sum(prob)
+        if sum_s > 0:
+            prob /= sum_s  # renormalize
+        else:
+            # if all valid moves were masked make all valid moves equally probable
+
+            # NB! All valid moves may be masked if either your NNet architecture is insufficient or you've get overfitting or something else.
+            # If you have got dozens or hundreds of these messages you should pay attention to your NNet and/or training process.   
+            log.error("All valid moves were masked, doing a workaround.")
+            prob = prob + valids
+            prob /= np.sum(prob) + 1e-10
         act = np.argmax(prob)
         return act
     
