@@ -1,6 +1,9 @@
 from copy import deepcopy as dcopy
 from math import sqrt, acos, pi
+from random import randint
 from typing import List
+
+from tensorflow.python.ops.gen_array_ops import deep_copy
 
 from GameBoard.game_board import Screen
 from src.utils import flatten
@@ -57,7 +60,7 @@ class Environment(object):
         self.max_n_turns = 100
         self.num_players = 2
         self.agent_step_dim = (1 + 2 * self.max_n_agents) * (self.MAX_SIZE ** 2) \
-            + self.max_n_turns + self.num_players
+            + 2 * self.max_n_turns + self.num_players
         self.action_dim = self.n_actions
         self.players = [Player(i) for i in range(self.num_players)]
         self.screen = Screen(self)
@@ -207,6 +210,11 @@ class Environment(object):
             title_scores, treasures_scores, area_scores = self.compute_score(board, board)
             diff_score = title_scores[player] + treasures_scores[player] + area_scores[player] +\
                     - title_scores[1 - player] - treasures_scores[1 - player] - area_scores[1 - player]
+    
+            # for player in range(self.num_players):
+            #     self.players[player].title_score = title_scores[player]
+            #     self.players[player].treasure_score += treasures_scores[player]
+            #     self.players[player].area_score = area_scores[player]
             return diff_score + 1e-7
         return 0
     
@@ -231,11 +239,12 @@ class Environment(object):
         Returns current observation
         """
         
-        state = dcopy([self.score_board, 
-                       self.agent_board, 
-                       self.conquer_board, 
-                       self.treasure_board, 
-                       self.wall_board])
+        state = dcopy([
+            self.score_board, 
+            self.agent_board, 
+            self.conquer_board, 
+            self.treasure_board, 
+            self.wall_board])
         
         if player_ID == 1:
             temp = dcopy(state[1][0])
@@ -245,6 +254,22 @@ class Environment(object):
             state[2][0] = dcopy(state[2][1])
             state[2][1] = temp
         return state
+    
+    def get_symmetric_state(self, state, agent_step):
+        
+        if np.random.choice([True, False]):
+            _r =  np.random.randint(3)
+            for i in range(len(state[0])):
+                t = state[0][i]
+                state[0][i] = np.rot90(t, _r)
+            agent_step = np.rot90(agent_step, _r)
+        if np.random.choice([True, False]):
+            for i in range(len(state[0])):
+                t = state[0][i]
+                state[0][i] = np.fliplr(t)
+            agent_step = np.fliplr(agent_step)
+        agent_step = self.get_agents_for_step(agent_step)
+        return state[0], agent_step[0]
     
     def convert_to_opn_obs(self, state, agent_pos):
         """
@@ -273,7 +298,7 @@ class Environment(object):
         # for i in range(self.height):
         #     print()
         print('-----------')
-        print("Agent Board 1: ", "Agent Board 2: ")
+        print("Conquered Agent Board 1: ", "Conquered Agent Board 2: ")
         for i in range(self.height):
             print(['X' if x == 1 else '-' for x in state[ConquerID][0][i][:self.width]],
                   ['O' if x == 1 else '-' for x in state[ConquerID][1][i][:self.width]])
@@ -293,7 +318,7 @@ class Environment(object):
     def get_agent_pos_all(self):
         return dcopy(self.agent_pos)
     
-    def getValidMoves(self, board, agent_pos, player, agent):
+    def get_valid_moves(self, board, agent_pos, player, agent):
         # return a fixed size binary vector
         valids = [1] * self.n_actions
         x, y = agent_pos[player][agent]
@@ -321,8 +346,9 @@ class Environment(object):
                 agent_state[player_ID][ag_id][x][y] = 1
                     
         index = agent_state[0][agent_ID]
-        onehot_nturns: list[int] = [0] * self.max_n_turns
-        onehot_nturns[self.remaining_turns] = 1
+        onehot_nturns = [[0] * self.max_n_turns, [0] * self.max_n_turns]
+        onehot_nturns[0][self.n_turns] = 1
+        onehot_nturns[1][self.remaining_turns] = 1
         onehot_players = [1, 1]
         if player_ID == 0:
             onehot_players[1] = 0
@@ -931,17 +957,20 @@ class Environment(object):
             if agent_ID == self.n_agents:
                 agent_ID = 0
                 depth += 1
+                _board = dcopy(state)
+                _board[0] = self.norm_score_board
+                title_scores, treasure_scores, area_scores = \
+                    self.compute_score(_board, _board)
+        
+                for player in range(self.num_players):
+                    self.players[player].title_score = title_scores[player]
+                    self.players[player].treasure_score += treasure_scores[player]
+                    self.players[player].area_score = area_scores[player]
                 if render:
-                    title_scores, treasure_scores, area_scores = \
-                        self.compute_score(state, state)
-            
-                    for player in range(self.num_players):
-                        self.players[player].title_score = title_scores[player]
-                        self.players[player].treasure_score += treasure_scores[player]
-                        self.players[player].area_score = area_scores[player]
-                        self.screen.show_score()
                     self.remaining_turns -= 1
+                    self.screen.show_score()
                     self.render()
+                    
         state = [score_board, agent_board, conquer_board, treasure_board, wall_board]
         # self.convert_to_opn_obs(state, agent_pos)
         # self.log_state(state)

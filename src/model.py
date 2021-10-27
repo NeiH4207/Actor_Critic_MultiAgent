@@ -129,13 +129,12 @@ class Policy(nn.Module):
         """
         examples: list of examples, each example is of form (board, pi, v)
         """
+        if len(examples) < args.batch_size: return
 
         for epoch in range(args.epochs):
             # print('\nEPOCH ::: ' + str(epoch + 1))
             self.train()
-
             batch_count = int(len(examples) / args.batch_size)
-
             t = tqdm(range(batch_count), desc='Training Net')
             for _ in t:
                 sample_ids = np.random.randint(len(examples), size=args.batch_size)

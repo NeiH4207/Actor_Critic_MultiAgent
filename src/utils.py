@@ -76,13 +76,12 @@ class AverageMeter2(object):
         self.mean_vals[1].append(np.mean(self.vals[1]))
     
     def plot(self, vtype = ''):
-        fig, ax = plt.subplots(figsize=(7, 4))
-        ax.grid()
-        ax.plot(self.mean_vals[0], color='red', label='bot 1')
-        ax.plot(self.mean_vals[1], color='blue', label='bot 2')
-        ax.set_xlabel('Episode', fontsize=16)
-        ax.set_ylabel(vtype, fontsize=16)
-    
+        plt.rcParams["figure.figsize"] = (6,3)
+        print(self.mean_vals[0])
+        print(self.mean_vals[1])
+        plt.plot(self.mean_vals[0], color='red', label='bot 1')
+        plt.plot(self.mean_vals[1], color='blue', label='bot 2')
+        plt.legend()
         # plt.savefig('./Experiments/' + vtype + '.pdf',bbox_inches='tight')
         plt.show()
         

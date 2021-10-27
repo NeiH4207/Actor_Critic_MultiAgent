@@ -56,12 +56,13 @@ class Coach():
         # self.game.log_state(board)
         episodeStep = 0
         agent_pos, player_id, agent_id, depth = self.game.get_agent_pos_all(), 0, 0, 0
+        
         self.mcts = MCTS(self.game, self.nnet, self.args, agent_pos, 
                          player_id, agent_id, depth)  # reset search tree
 
         while True:
             episodeStep += 1
-            temp = int(episodeStep < self.args.tempThreshold)
+            temp = int(episodeStep < self.args.tempThreshold * self.game.n_turns)
             pi = self.mcts.getActionProb(board, agent_pos, player_id, agent_id, depth, temp=temp)
             _state, _agent_pos = dcopy(board), dcopy(agent_pos)
             
@@ -69,7 +70,12 @@ class Coach():
                 self.game.convert_to_opn_obs(_state, _agent_pos)
             
             agent_step = self.game.get_agent_for_step(agent_id, player_id, _agent_pos)
-            trainExamples.append([_state, player_id, pi, agent_step])
+            
+            state_sym, agent_step_sym = \
+                self.game.get_symmetric_state(self.game.get_states_for_step(_state),
+                                              agent_step)
+            
+            trainExamples.append([state_sym, player_id, pi, agent_step_sym])
 
             action = np.random.choice(len(pi), p=pi)
             
@@ -85,12 +91,12 @@ class Coach():
                 self.scores.update(self.game.players[0].total_score,
                                    self.game.players[1].total_score)
                 self.game.soft_reset()
-                data = Data(self.args.min_size, self.args.max_size)
+                # data = Data(self.args.min_size, self.args.max_size)
                 # self.game.__init__(data.get_random_map(), self.args.show_screen, self.args.max_size)
                 # print([r * ((-1) ** (x[1] != player_id)) for x in trainExamples])
                 return [(x[0], x[3], x[2], r * ((-1) ** (x[1] != player_id))) for x in trainExamples]
 
-    def learn(self):
+    def learn(self, iter):
         """
         Performs numIters iterations with numEps episodes of self-play in each
         iteration. After every iteration, it retrains neural network with
@@ -100,12 +106,14 @@ class Coach():
         """
 
         # examples of the iteration
-        if not self.skipFirstSelfPlay or i > 1:
+        if not self.skipFirstSelfPlay or iter > 1:
             iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
 
             for _ in tqdm(range(self.args.numEps), desc="Self Play"):
                 iterationTrainExamples += self.executeEpisode()
-            self.scores.plot()
+                
+            if self.args.visualize:
+                self.scores.plot()
 
             # save the iteration examples to the history 
             self.trainExamplesHistory.append(iterationTrainExamples)
@@ -114,9 +122,8 @@ class Coach():
             log.warning(
                 f"Removing the oldest entry in trainExamples. len(trainExamplesHistory) = {len(self.trainExamplesHistory)}")
             self.trainExamplesHistory.pop(0)
+            
         # backup history to a file
-        # NB! the examples were collected using the model from the previous iteration, so (i-1)  
-        # self.saveTrainExamples()
 
         # shuffle examples before training
         trainExamples = []
@@ -130,24 +137,6 @@ class Coach():
                                   filename=self.args.load_folder_file[1])
         if self.args.colab_train:
             self.nnet.save_colab_model(self.args.colab_dir)
-            # self.pnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
-            # pmcts = MCTS(self.game, self.pnet, self.args)
-
-            # nmcts = MCTS(self.game, self.nnet, self.args)
-
-            # log.info('PITTING AGAINST PREVIOUS VERSION')
-            # arena = Arena(lambda x: np.argmax(pmcts.getActionProb(x, temp=0)),
-            #               lambda x: np.argmax(nmcts.getActionProb(x, temp=0)), self.game)
-            # pwins, nwins, draws = arena.playGames(self.args.arenaCompare)
-
-            # log.info('NEW/PREV WINS : %d / %d ; DRAWS : %d' % (nwins, pwins, draws))
-            # if pwins + nwins == 0 or float(nwins) / (pwins + nwins) < self.args.updateThreshold:
-            #     log.info('REJECTING NEW MODEL')
-            #     self.nnet.load_checkpoint(folder=self.args.checkpoint, filename='temp.pth.tar')
-            # else:
-            #     log.info('ACCEPTING NEW MODEL')
-            #     self.nnet.save_checkpoint(folder=self.args.checkpoint, filename=self.getCheckpointFile(i))
-            #     self.nnet.save_checkpoint(folder=self.args.checkpoint, filename='best.pth.tar')
 
     def getCheckpointFile(self):
         return 'checkpoint_' + 'pt'

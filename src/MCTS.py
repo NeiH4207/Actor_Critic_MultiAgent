@@ -44,7 +44,6 @@ class MCTS():
         for i in range(self.args.numMCTSSims):
             self.search(canonicalBoard, agent_pos, player_id, agent_id, depth)
 
-        s = self.game.stringRepresentation(canonicalBoard)
         counts = [self.Nsa[(s, a)] if (s, a) in self.Nsa else 0 
                   for a in range(self.game.n_actions)]
 
@@ -81,9 +80,6 @@ class MCTS():
         """
         # self.game.log_state(canonicalBoard)
         # time.sleep(1)
-        # print(depth)
-        # self.game.log_state(canonicalBoard)
-        # time.sleep(2)
         agent_pos = dcopy(agent_pos)
         canonicalBoard = dcopy(canonicalBoard)
         s = self.game.stringRepresentation(canonicalBoard)
@@ -92,6 +88,7 @@ class MCTS():
                                                 agent_id, depth)
         if self.Es[s] != 0:
             # terminal node
+            # self.Es[s] = max(min(self.Es[s], 1), -1)
             return -self.Es[s]
 
         if s not in self.Ps:
@@ -99,14 +96,15 @@ class MCTS():
             state = dcopy(canonicalBoard)
             agent_pos_ = dcopy(agent_pos)
             if player_id == 1:
-                self.game.convert_to_opn_obs(state, agent_pos_)
+                state, agent_pos_ = self.game.convert_to_opn_obs(state, agent_pos_)
             state_step = self.game.get_states_for_step(state)
             agent_step = self.game.get_agent_for_step(agent_id, player_id, agent_pos_)
             self.Ps[s], v = self.nnet.step(state_step, agent_step)
             self.Ps[s], v = self.Ps[s][0], v[0]
             # print(self.Ps[s])
             # print(v)
-            valids = self.game.getValidMoves(canonicalBoard, agent_pos, 
+            # time.sleep(5)
+            valids = self.game.get_valid_moves(canonicalBoard, agent_pos, 
                                              player_id, agent_id)
             self.Ps[s] = self.Ps[s] * valids  # masking invalid moves
             sum_Ps_s = np.sum(self.Ps[s])
@@ -119,7 +117,7 @@ class MCTS():
                 # If you have got dozens or hundreds of these messages you should pay attention to your NNet and/or training process.   
                 log.error("All valid moves were masked, doing a workaround.")
                 self.Ps[s] = self.Ps[s] + valids
-                self.Ps[s] /= np.sum(self.Ps[s])
+                self.Ps[s] /= np.sum(self.Ps[s]) + 1e-10
 
             self.Vs[s] = valids
             self.Ns[s] = 0

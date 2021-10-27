@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
 args = dotdict({
     'run_mode': 'train',
     'visualize': True,
-    'min_size': 10,
+    'min_size': 8,
     'max_size': 10,
     'n_games': 1,
     'n_maps': 1000,
@@ -27,17 +27,17 @@ args = dotdict({
     'final_epsilon': 1e-4,
     'dir': './Models/',
     'numIters': 1000,
-    'numEps': 20,              # Number of complete self-play games to simulate during a new iteration.
+    'numEps': 3,              # Number of complete self-play games to simulate during a new iteration.
     'tempThreshold': 15,        #
     'updateThreshold': 0.6,     # During arena playoff, new neural net will be accepted if threshold or more of games are won.
     'maxlenOfQueue': 10000,    # Number of game examples to train the neural networks.
-    'numMCTSSims': 25,          # Number of games moves for MCTS to simulate.
+    'numMCTSSims': 5,          # Number of games moves for MCTS to simulate.
     'arenaCompare': 40,         # Number of games to play during arena play to determine if new net will be accepted.
     'cpuct': 1,
     'colab_train': False,
     'colab_dir': "/content/drive/MyDrive/trainned_model/agent_mcts.pt",
     'checkpoint': './temp/',
-    'load_model': True,
+    'load_model': False,
     'load_folder_file': ('Models','agent_mcts.pt'),
     'numItersForTrainExamplesHistory': 15,
     'saved_model': True
@@ -64,7 +64,7 @@ def main():
     for i in range(args.numIters):
         # bookkeeping
         log.info(f'Starting Iter #{i} ...')
-        coach.learn()
+        coach.learn(i)
         coach.game = Environment(data.get_random_map(), args.show_screen, args.max_size)
 
 
