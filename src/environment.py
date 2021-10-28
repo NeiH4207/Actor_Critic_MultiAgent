@@ -1,9 +1,5 @@
 from copy import deepcopy as dcopy
 from math import sqrt, acos, pi
-from random import randint
-from typing import List
-
-from tensorflow.python.ops.gen_array_ops import deep_copy
 
 from GameBoard.game_board import Screen
 from src.utils import flatten
